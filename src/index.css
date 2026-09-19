@@ -1,0 +1,33 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-north: #2a4795;
+  --color-north-deep: #1c3068;
+  --color-north-tint: #eceff9;
+  --color-navy: #0b1226;
+  --color-ink: #101423;
+  --color-ivory: #f6f4ef;
+  --color-surface: #ffffff;
+  --color-line: #e4e0d6;
+  --color-muted: #5f5d57;
+  --color-amber: #e8a863;
+  --color-amber-ink: #9c5a22;
+  --color-green: #2e6f4e;
+  --color-green-tint: #e7f1ea;
+  --color-red: #a33a32;
+  --color-red-tint: #f8eae8;
+
+  --font-display: "Fraunces", serif;
+  --font-sans: "Karla", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius-field: 10px;
+  --radius-card: 16px;
+}
+
+body {
+  background-color: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
