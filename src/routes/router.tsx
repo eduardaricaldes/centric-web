@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { Login } from "../features/auth/Login";
 import { Register } from "../features/auth/Register";
+import { ResetPassword } from "../features/auth/ResetPassword";
 import { EventDetailRoute } from "../features/events/EventDetail";
 import { EventFormPage } from "../features/events/EventForm";
 import { EventList } from "../features/events/EventList";
@@ -16,6 +17,7 @@ import { AppLayout, RequireAuth } from "./ProtectedRoute";
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
+  { path: "/reset-password", element: <ResetPassword /> },
   {
     element: <RequireAuth />,
     children: [
