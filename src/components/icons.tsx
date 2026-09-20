@@ -185,3 +185,53 @@ export function IconAlertTriangle(props: SVGProps<SVGSVGElement>) {
     </Icon>
   );
 }
+
+export function IconUsers(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20c1.1-3.4 3.6-5 6-5s4.9 1.6 6 5" />
+      <path d="M16 4.3a3.2 3.2 0 0 1 0 6.2" />
+      <path d="M18.5 15.4c2 .6 3.4 2.1 4.2 4.6" />
+    </Icon>
+  );
+}
+
+export function IconShield(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3l7 3v5.5c0 4.5-3 7.6-7 9.5-4-1.9-7-5-7-9.5V6l7-3Z" />
+      <path d="m9.5 12 1.8 1.8 3.2-3.6" />
+    </Icon>
+  );
+}
+
+export function IconLink(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M9.5 14.5 14.5 9.5" />
+      <path d="M11 6.5 12.4 5A3.5 3.5 0 1 1 17.4 10l-1.5 1.5" />
+      <path d="M13 17.5 11.6 19A3.5 3.5 0 1 1 6.6 14l1.5-1.5" />
+    </Icon>
+  );
+}
+
+export function IconKey(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="15" r="4" />
+      <path d="m10.8 12.2 8.7-8.7" />
+      <path d="m16 7 2.5 2.5" />
+      <path d="m18.5 4.5 2.5 2.5" />
+    </Icon>
+  );
+}
+
+export function IconCopy(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+    </Icon>
+  );
+}

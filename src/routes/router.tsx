@@ -1,4 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
+import { InvitesPage } from "../features/admin/InvitesPage";
+import { MinistriesPage } from "../features/admin/MinistriesPage";
+import { MinistryMembersPage } from "../features/admin/MinistryMembersPage";
+import { UsersPage } from "../features/admin/UsersPage";
 import { Login } from "../features/auth/Login";
 import { Register } from "../features/auth/Register";
 import { ResetPassword } from "../features/auth/ResetPassword";
@@ -12,7 +16,7 @@ import { SongDetailRoute } from "../features/songs/SongDetail";
 import { SongFormPage } from "../features/songs/SongForm";
 import { SongList } from "../features/songs/SongList";
 import { StageRoute } from "../features/stage/Stage";
-import { AppLayout, RequireAuth } from "./ProtectedRoute";
+import { AppLayout, RequireAdministration, RequireAuth } from "./ProtectedRoute";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -35,6 +39,15 @@ export const router = createBrowserRouter([
           { path: "/events/:id/edit", element: <EventFormPage /> },
           { path: "/events/:id/program", element: <ProgramPage /> },
           { path: "/profile", element: <Profile /> },
+          {
+            element: <RequireAdministration />,
+            children: [
+              { path: "/admin/users", element: <UsersPage /> },
+              { path: "/admin/ministries", element: <MinistriesPage /> },
+              { path: "/admin/ministries/:id", element: <MinistryMembersPage /> },
+              { path: "/admin/invites", element: <InvitesPage /> },
+            ],
+          },
         ],
       },
       // Modo palco ocupa a janela inteira: fora do layout com menu lateral.

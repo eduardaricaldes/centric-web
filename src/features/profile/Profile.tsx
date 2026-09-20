@@ -11,12 +11,7 @@ import { Input } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
 import { getErrorMessage } from "../../lib/errors";
 import { useAuth } from "../auth/AuthContext";
-
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Administrador",
-  LEADER: "Líder",
-  MEMBER: "Membro",
-};
+import { ROLE_LABEL } from "../admin/labels";
 
 const nameSchema = z.object({
   name: z.string().min(1, "Informe o nome"),

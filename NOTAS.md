@@ -141,3 +141,86 @@ cada etapa da seção 7 do BRIEFING.md.
     telas — tudo passa por `lib/permissions.ts`.
   - Tamanho de fonte do modo palco: já salvo desde a Etapa 3 (`localStorage`, via
     `lib/storage.ts`), sem trabalho adicional aqui.
+
+## Etapa 9 — administração (Fase 6 da API)
+
+Segue o `BRIEFING-ADMIN.md`. Conferido direto contra `../centric-api/app` (rotas,
+schemas e modelos), não só contra o documento.
+
+- **Convite não é JWT — é um token opaco (`secrets.token_urlsafe(32)`), guardado só
+  com hash (`token_hash`) no banco.** Não existe `GET /invites/{token}` nem qualquer
+  rota pública para ler os dados de um convite antes do cadastro. Isso significa que
+  o "e-mail vem preenchido" do BRIEFING-ADMIN (seção 1) não pode vir de uma consulta
+  do front — a única fonte real é a própria resposta de `POST /invites/`, que já
+  mostra o e-mail (quando o convite tem um) para quem está criando o convite. Por
+  isso o link montado na tela de Convites (`InvitesPage`) inclui `&email=...` na URL
+  quando o convite tem e-mail amarrado, e `Register.tsx` só lê esse parâmetro para
+  preencher e travar o campo — nenhum dado é inventado, só passado adiante do que a
+  API já devolveu no momento da criação. Convite sem e-mail (`email: null`) deixa o
+  campo livre para a pessoa digitar, exatamente como a API permite (`invite.email is
+  None` pula a checagem no `POST /auth/register`).
+
+- **`GET /invites/` já filtra convite usado e expirado no servidor**
+  (`app/api/invites.py`, `list_invites`: `.filter(Invite.used_at.is_(None))` e
+  `.filter(Invite.expires_at > utcnow())`). O BRIEFING-ADMIN pede "destaque visual
+  para convite expirado, comparando `expires_at` com agora" — implementei a
+  comparação em `InvitesPage.tsx` (`isExpired`) por segurança e para não deixar o
+  requisito não-atendido no código, mas hoje ela nunca deve disparar de verdade,
+  porque a API não devolve convite expirado nessa lista. Documentando para quem for
+  medir cobertura: não é bug do front, é como a API filtra.
+
+- **`GET /ministries/` não traz `description`, e não existe `GET /ministries/{id}`.**
+  Só `POST`/`PATCH /ministries/{id}` devolvem `MinistryDetailResponse` com a
+  descrição. Sem uma consulta que traga o ministério individual, a tela de edição
+  não tem como saber a descrição atual de um ministério que não foi criado/editado
+  nesta sessão pelo navegador atual. Decisão: `MinistriesPage.tsx` guarda a
+  descrição vista da última vez (cache do TanStack Query, chave
+  `["ministry-description", id]`) e usa isso para pré-preencher o formulário de
+  edição; quando não há nada guardado, o campo abre vazio **e o PATCH só manda a
+  chave `description` quando o campo não está vazio** — deixar em branco não some
+  com a descrição salva no banco (a API usa `exclude_unset`, então omitir a chave
+  preserva o valor atual). Efeito colateral aceito: não dá para *apagar* uma
+  descrição existente por esta tela (só substituir por outro texto). Não implementei
+  nada mais elaborado (ex.: pré-carregar descrição de todos os ministérios ao entrar
+  na lista) porque não existe rota em lote para isso sem `GET /ministries/{id}`.
+
+- **Rebaixar administrador é um botão binário (ADMIN ⇄ MEMBRO), não um seletor de
+  papel.** `PATCH /users/{id}/role` só recebe `{role}` e não conhece ministério —
+  quem sincroniza `LEADER` é `sync_global_role`, chamado só pelas rotas de
+  ministério (seção 2 do BRIEFING-ADMIN). Se uma pessoa for administradora **e**
+  também líder de um ministério (caso raro, mas possível: promovida a admin depois
+  de já liderar algo), rebaixar por `UsersPage` manda ela para `MEMBER` — o próximo
+  evento que sincronizar aquele ministério (qualquer PATCH/POST/DELETE de membro
+  daquele ministério) devolve o papel `LEADER` de verdade outra vez. Optei por não
+  "resolver" isso adivinhando o papel certo no front (exigiria saber de quais
+  ministérios a pessoa lidera, o que `GET /users/` não devolve) nem encadear uma
+  segunda chamada "para garantir" — é exatamente o padrão que a seção 2 do
+  BRIEFING-ADMIN manda evitar.
+
+- **LEADER continua sem uma rota que diga "de quais ministérios eu sou líder"**
+  (mesma lacuna já registrada na Etapa 5 para `canManage`). Isso afeta duas telas
+  novas: o seletor de ministério em "Novo convite" (`InvitesPage`) e o botão de
+  gerenciar membros em `MinistryMembersPage` — ambos ficam otimistas para qualquer
+  LEADER (mostram a ação para todos os ministérios) e contam com o 403 real da API
+  (`ensure_ministry_manager`) para barrar quem tentar um ministério que não lidera.
+  Mensagem de erro traduzida em `lib/errors.ts` ("Ministry leader access required").
+
+- **`AddMemberPanel` busca pessoa por `GET /users/?search=`** (a mesma rota da tela
+  Pessoas), limitando a 8 resultados. Marca como desabilitado quem já é membro do
+  ministério aberto, usando a lista já carregada de `GET /ministries/{id}/members`
+  — a checagem de 409 existe na API, mas aqui dá para não deixar chegar nele, como
+  pede a seção 4.2.
+
+- **`Dialog` e `ConfirmDialog` são componentes novos em `src/components/`.** Não
+  existia nada parecido no projeto até a Etapa 9 (todas as ações anteriores eram
+  diretas, sem confirmação). A Etapa 9 é a primeira a exigir confirmação de verdade
+  (promover/rebaixar admin, remover membro de ministério, cancelar convite) — regra
+  explícita no BRIEFING-ADMIN ("com confirmação, já que muda poder de verdade").
+
+- **O que falta / pendente de teste ao vivo:** como na Etapa 0, a extensão do Chrome
+  não estava conectada nesta sessão — a validação foi por leitura cruzada do código
+  da API (`app/api/*.py`, `app/schemas/*.py`) e por `npm run build`/`npm run lint`,
+  não por clicar de verdade no navegador. O fluxo "convite → cadastro → login →
+  aparece em Pessoas" (seção 5 do BRIEFING-ADMIN) não foi exercitado ponta a ponta
+  contra uma API rodando. Recomendo rodar esse fluxo manualmente antes de considerar
+  a etapa fechada de fato.
