@@ -8,6 +8,8 @@ import type {
   EventType,
   EventUpdatePayload,
   PageParams,
+  Preaching,
+  PreachingUpsertPayload,
   SongView,
 } from "./types";
 
@@ -46,4 +48,9 @@ export function updateEvent(id: number, payload: EventUpdatePayload): Promise<Ev
 
 export function deleteEvent(id: number): Promise<void> {
   return apiRequest<void>(`/events/${id}`, { method: "DELETE" });
+}
+
+/** O evento já embute `preaching` (ou `null`) — isto é só para criar/atualizar. */
+export function upsertPreaching(eventId: number, payload: PreachingUpsertPayload): Promise<Preaching> {
+  return apiRequest<Preaching>(`/events/${eventId}/preaching`, { method: "PUT", json: payload });
 }

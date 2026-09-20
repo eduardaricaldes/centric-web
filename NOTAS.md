@@ -44,6 +44,34 @@ cada etapa da seção 7 do BRIEFING.md.
   `services/programs.py`). `EventWarning` em `types.ts` já trata os três campos
   específicos como opcionais — sempre mostrar pelo `message`.
 
+- **Escala e Pregação saíram da Etapa 4 e foram para a Etapa 5.** A tela "Evento"
+  (seção 6, tela 7) tem três abas — Repertório, Escala, Pregação — mas a seção 7 só
+  agenda "repertório com arrastar e soltar" na Etapa 4; Escala fica explícita na
+  Etapa 5, e Pregação não tem etapa dona. Juntei Pregação com Escala na Etapa 5
+  porque as duas precisam da mesma solução para escolher uma pessoa. Etapa 4
+  entregou Repertório completo; as outras duas abas ficaram "ainda vai ser
+  construída" até a Etapa 5 chegar.
+
+- **Como "escalar alguém" e "definir pregador" escolhem uma pessoa, sem `GET /users`.**
+  A ideia registrada aqui na Etapa 4 (juntar os membros de todos os ministérios numa
+  lista única) acabou não sendo necessária: a Etapa 5 usa um seletor em cascata —
+  escolhe o ministério (`GET /ministries/`), depois a pessoa dentro dele
+  (`GET /ministries/{id}/members`) — que é mais fiel ao domínio (você escala alguém
+  *para* um ministério) e mais simples de implementar. `src/features/events/useMinistries.ts`
+  tem os dois hooks, reusados por `RosterTab` (escala) e `PreachingTab` (pregador).
+  Limitação que continua real: quem não é membro de nenhum ministério não aparece em
+  nenhum seletor — não tem como escalar essa pessoa ou marcá-la como pregadora pelo
+  front hoje.
+
+- **Não existe `POST /ministries/` nem forma de adicionar membro a um ministério pela
+  API.** Só há as duas rotas de leitura. Ministérios e suas pessoas são cadastrados
+  fora do alcance deste front (banco de dados direto, script de seed, ou uma
+  ferramenta interna que não foi construída aqui). Testei a Etapa 5 inserindo dados
+  de teste direto no Postgres local — isso não é algo que o front deveria fazer em
+  produção, é só uma limitação de ambiente de teste que documento para quem for medir
+  cobertura: o CRUD de ministérios/membros não está no escopo do BRIEFING nem da API
+  atual.
+
 ## Ambiente local (não afeta o código, só o teste)
 
 - Na minha máquina de desenvolvimento, a porta 8000 já está ocupada por outra API
@@ -61,18 +89,14 @@ cada etapa da seção 7 do BRIEFING.md.
   CORS da API (`http://localhost:5173,http://localhost:3000`), então um teste real
   pelo navegador nesta máquina exigiria liberar a porta 5173 primeiro.
 
-- **Escala e Pregação saíram da Etapa 4 e foram para a Etapa 5.** A tela "Evento"
-  (seção 6, tela 7) tem três abas — Repertório, Escala, Pregação — mas a seção 7 só
-  agenda "repertório com arrastar e soltar" na Etapa 4; Escala fica explícita na
-  Etapa 5, e Pregação não tem etapa dona. Decidi juntar Pregação com Escala na
-  Etapa 5 porque as duas precisam da mesma solução para escolher uma pessoa
-  (`GET /ministries/{id}/members`, sem `GET /users`) — dá pra construir a busca de
-  pessoa uma vez só e reusar nas duas abas. Etapa 4 entrega Repertório completo;
-  as outras duas abas mostram "ainda vai ser construída" por enquanto.
-
 ## O que falta (por etapa)
 
 - Etapa 0: concluída. Fundação, auth, layout protegido.
 - Etapa 4: concluída. Lista de eventos com filtros, formulário de evento, repertório
   com arrastar/soltar (dnd-kit, otimista com reversão em erro), busca para adicionar
   música. Escala e Pregação ficam para a Etapa 5 (ver decisão acima).
+- Etapa 5: concluída. Escala (agrupada por ministério, painel de escalar com seletor
+  em cascata ministério→pessoa), Pregação (mesmo padrão de seletor), Início real
+  (próximo evento em destaque, repertório dele, "minha escala" com
+  confirmar/recusar). Validado via curl com dados de teste no Postgres local (ver
+  nota sobre `POST /ministries/` acima).

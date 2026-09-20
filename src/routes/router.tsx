@@ -5,6 +5,7 @@ import { Register } from "../features/auth/Register";
 import { EventDetailRoute } from "../features/events/EventDetail";
 import { EventFormPage } from "../features/events/EventForm";
 import { EventList } from "../features/events/EventList";
+import { Home } from "../features/home/Home";
 import { SongDetailRoute } from "../features/songs/SongDetail";
 import { SongList } from "../features/songs/SongList";
 import { StageRoute } from "../features/stage/Stage";
@@ -19,7 +20,7 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { path: "/", element: <PlaceholderPage title="Início" /> },
+          { path: "/", element: <Home /> },
           { path: "/songs", element: <SongList /> },
           { path: "/songs/new", element: <PlaceholderPage title="Nova música" /> },
           { path: "/songs/:id", element: <SongDetailRoute /> },

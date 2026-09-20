@@ -39,7 +39,6 @@ import {
   IconCalendar,
   IconEdit,
   IconGrip,
-  IconMic,
   IconMusic,
   IconTrash,
 } from "../../components/icons";
@@ -50,6 +49,8 @@ import { isEventCollaborator, isEventOwner } from "../../lib/permissions";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { listItemHasChords } from "../../api/songs";
 import { EVENT_TYPE_LABEL } from "./eventLabels";
+import { PreachingTab } from "./PreachingTab";
+import { RosterTab } from "./RosterTab";
 
 type Tab = "repertoire" | "roster" | "preaching";
 
@@ -497,20 +498,8 @@ export function EventDetail() {
       {tab === "repertoire" && (
         <RepertoireTab eventId={eventId} event={event} canEdit={canEditRepertoire} />
       )}
-      {tab === "roster" && (
-        <EmptyState
-          icon={<IconMic width={28} height={28} />}
-          title="Escala"
-          description="Esta aba ainda vai ser construída (Etapa 5)."
-        />
-      )}
-      {tab === "preaching" && (
-        <EmptyState
-          icon={<IconMic width={28} height={28} />}
-          title="Pregação"
-          description="Esta aba ainda vai ser construída (Etapa 5)."
-        />
-      )}
+      {tab === "roster" && <RosterTab eventId={eventId} event={event} user={user} />}
+      {tab === "preaching" && <PreachingTab eventId={eventId} event={event} user={user} />}
     </div>
   );
 }
