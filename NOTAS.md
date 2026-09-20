@@ -89,6 +89,14 @@ cada etapa da seção 7 do BRIEFING.md.
   CORS da API (`http://localhost:5173,http://localhost:3000`), então um teste real
   pelo navegador nesta máquina exigiria liberar a porta 5173 primeiro.
 
+- A chave Gemini configurada no `.env` da API local não gerou nenhuma sugestão
+  bem-sucedida nesta máquina (`AIServiceUnavailableError` → 503 toda vez que testei
+  `POST /events/{id}/program/suggest`). Isso, na prática, testou exatamente o
+  caminho que a Etapa 7 pede para não quebrar a tela — confirmado que funciona — mas
+  não cheguei a ver o caminho feliz (sugestão aplicada de verdade) rodando ao vivo.
+  O formato da resposta foi conferido contra `app/schemas/program.py`, não contra
+  uma resposta real da IA.
+
 ## O que falta (por etapa)
 
 - Etapa 0: concluída. Fundação, auth, layout protegido.
@@ -100,3 +108,10 @@ cada etapa da seção 7 do BRIEFING.md.
   (próximo evento em destaque, repertório dele, "minha escala" com
   confirmar/recusar). Validado via curl com dados de teste no Postgres local (ver
   nota sobre `POST /ministries/` acima).
+- Etapa 6: concluída. Cadastro/edição de música com editor ChordPro único (gera
+  lyrics e chordpro juntos) e pré-visualização estilo palco ao lado. Bloqueia saída
+  com alteração pendente (useBlocker + beforeunload). Só ADMIN acessa a rota.
+- Etapa 7: concluída. Programação com IA — briefing + duração alvo, linha do tempo
+  com os blocos, tempo somado contra o alvo, alertas, "Aplicar no repertório" e
+  "Descartar". IA indisponível não quebra a tela (testado ao vivo, ver nota acima).
+  Botão de acesso fica no cabeçalho do evento, visível para ADMIN/LEADER.

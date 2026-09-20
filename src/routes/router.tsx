@@ -6,6 +6,7 @@ import { EventDetailRoute } from "../features/events/EventDetail";
 import { EventFormPage } from "../features/events/EventForm";
 import { EventList } from "../features/events/EventList";
 import { Home } from "../features/home/Home";
+import { ProgramPage } from "../features/program/ProgramPage";
 import { SongDetailRoute } from "../features/songs/SongDetail";
 import { SongFormPage } from "../features/songs/SongForm";
 import { SongList } from "../features/songs/SongList";
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
           { path: "/events/new", element: <EventFormPage /> },
           { path: "/events/:id", element: <EventDetailRoute /> },
           { path: "/events/:id/edit", element: <EventFormPage /> },
+          { path: "/events/:id/program", element: <ProgramPage /> },
           { path: "/profile", element: <PlaceholderPage title="Perfil" /> },
         ],
       },

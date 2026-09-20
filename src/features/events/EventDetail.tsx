@@ -465,6 +465,11 @@ export function EventDetail() {
               </Button>
             </Link>
           )}
+          {isEventCollaborator(user) && (
+            <Link to={`/events/${event.id}/program`}>
+              <Button variant="secondary">Programação IA</Button>
+            </Link>
+          )}
           <Button onClick={() => navigate(`/events/${event.id}/stage`)}>Modo palco</Button>
         </div>
       </div>
