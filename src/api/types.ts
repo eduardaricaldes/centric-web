@@ -67,6 +67,7 @@ export interface SongListItem {
   chordpro?: string;
   tone: string | null;
   category: string | null;
+  duration_min: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -80,6 +81,7 @@ export interface SongDetail {
   chordpro: string | null;
   tone: string | null;
   category: string | null;
+  duration_min: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -98,6 +100,7 @@ export interface SongCreatePayload {
   artist?: string | null;
   tone?: string | null;
   category?: string | null;
+  duration_min?: number | null;
 }
 
 export interface SongUpdatePayload {
@@ -107,6 +110,7 @@ export interface SongUpdatePayload {
   artist?: string | null;
   tone?: string | null;
   category?: string | null;
+  duration_min?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +140,8 @@ export interface Playlist {
 
 export interface PlaylistDetail extends Playlist {
   songs: PlaylistSong[];
+  /** Soma de `duration_min` das músicas (0 quando nenhuma tem duração cadastrada). */
+  total_duration_min: number;
 }
 
 export interface PlaylistListResponse {
@@ -175,6 +181,25 @@ export interface ReorderPlaylistPayload {
 export interface MinistrySummary {
   id: number;
   name: string;
+}
+
+/** GET /ministries/ — só ADMIN/LEADER. */
+export interface MinistryItem {
+  id: number;
+  name: string;
+}
+
+export interface MinistryListResponse {
+  total: number;
+  items: MinistryItem[];
+}
+
+/** GET /ministries/{id}/members — só ADMIN/LEADER. Sem e-mail nem dado sensível. */
+export interface MinistryMember {
+  user_id: number;
+  name: string;
+  role: "LEADER" | "MEMBER";
+  instrument: string | null;
 }
 
 export interface Assignment {
@@ -252,11 +277,19 @@ export interface Event {
   updated_at: string;
 }
 
+/**
+ * Lista aberta de avisos (regra 3.3). Hoje existem dois formatos:
+ * - `USER_MULTIPLE_MINISTRIES`: `user_id` + `ministry_ids` presentes.
+ * - `SONG_RECENTLY_USED`: `song_id` presente (a música voltou a se repetir em
+ *   menos de 28 dias, conferido contra `services/programs.py`).
+ * Sempre mostre pelo `message`; trate os campos específicos como opcionais.
+ */
 export interface EventWarning {
   code: string;
   message: string;
-  user_id: number;
-  ministry_ids: number[];
+  user_id?: number;
+  ministry_ids?: number[];
+  song_id?: number;
 }
 
 export interface EventDetail extends Event {

@@ -13,23 +13,36 @@ cada etapa da seção 7 do BRIEFING.md.
   `src/lib/permissions.ts` esconde os botões de criar/editar/excluir para quem não é
   ADMIN; LEADER e MEMBER veem a tabela inteira, só leitura.
 
-- **Sem endpoint para listar pessoas ou ministérios.** A tela de escala (seção 6,
-  tela 7 "Evento" > aba Escala) descreve um "painel para escalar alguém", que precisa
-  de uma lista de pessoas e ministérios para escolher. A API não tem `GET /users` nem
-  `GET /ministries` — só existe `POST /events/{id}/assignments` esperando `user_id` e
-  `ministry_id` que o front já deve saber de antemão. Isso vai ser tratado na Etapa 5:
-  o plano é aproveitar oportunisticamente os `UserSummary`/`MinistrySummary` que já
-  aparecem embutidos nas respostas de assignments e pregação (nomes e ids de quem já
-  foi escalado em qualquer evento) para montar um combobox, com um campo de id manual
-  como reforço. Documentado aqui porque é uma limitação real da API, não um bug do
-  front — regra 0 do BRIEFING ("implemente o que dá, anote o que falta").
+- **~~Sem endpoint para listar pessoas ou ministérios~~ — resolvido pela API.**
+  Quando a Etapa 0 começou a API não tinha `GET /ministries` nem forma de listar
+  pessoas por ministério; documentei aqui que a Etapa 5 ia precisar improvisar. No
+  commit `c41b300` (19/09) a API ganhou `GET /ministries/` e
+  `GET /ministries/{id}/members` (ambos ADMIN/LEADER, devolvem `user_id`, `name`,
+  `role` — LEADER/MEMBER — e `instrument`, sem e-mail). `src/api/ministries.ts` já
+  existe com os dois. O painel de "escalar alguém" da Etapa 5 usa isso direto: lista
+  ministérios, escolhe um, lista os membros, escolhe a pessoa. Não precisa mais do
+  plano de improviso com `UserSummary` espalhado.
 
-- **`canManage(user, ministryId?)` é otimista para LEADER.** Não existe endpoint que
-  devolva "de quais ministérios eu sou líder" (`ensure_ministry_manager` no backend
-  checa isso via tabela `ministry_members`, inacessível ao front). Por isso qualquer
-  LEADER vê as ações de gestão de escala/repertório de evento; se ele não for líder
-  daquele ministério específico, a API responde 403 de verdade e a tela precisa
-  aguentar isso (regra 3.1.9) — o que já é exigido em todas as telas.
+- **`canManage(user, ministryId?)` pode ficar mais preciso agora.** Com
+  `GET /ministries/{id}/members` dá pra checar de verdade se o usuário atual é
+  `role: "LEADER"` naquele ministério (em vez de só confiar que todo LEADER vê a
+  ação). Ainda assim, a tela precisa aguentar 403 de verdade (regra 3.1.9) —
+  decisão de quanto refinar isso fica para a Etapa 5, quando a tela de escala for
+  escrita.
+
+- **`duration_min` em música e `total_duration_min` em repertório.** Descobertos ao
+  reler a API na Etapa 2 (não estavam na primeira leitura da Etapa 0 — a API evoluiu
+  entre uma sessão e outra, commit `c41b300`). `Song.duration_min` é opcional
+  (inteiro, minutos). `GET /playlist/{id}` e `GET /events/{id}` agora somam
+  `total_duration_min` no repertório — útil para a Etapa 9 (Programação com IA)
+  comparar tempo somado contra a duração alvo sem o front precisar somar na mão.
+  `types.ts` já reflete os dois campos.
+
+- **`EventWarning` ganhou um segundo formato.** Além de `USER_MULTIPLE_MINISTRIES`
+  (`user_id` + `ministry_ids`), agora existe `SONG_RECENTLY_USED` (`song_id`,
+  quando a mesma música volta a tocar em menos de 28 dias, janela de
+  `services/programs.py`). `EventWarning` em `types.ts` já trata os três campos
+  específicos como opcionais — sempre mostrar pelo `message`.
 
 ## Ambiente local (não afeta o código, só o teste)
 

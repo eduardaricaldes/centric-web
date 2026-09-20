@@ -73,3 +73,50 @@ export function transposeTone(tone: string, semitones: number): string {
   if (semitones === 0) return tone;
   return transposeChord(tone, semitones);
 }
+
+export interface ChordLine {
+  /** Linha de acordes, alinhada por coluna com a sílaba onde cada um entra. */
+  chordRow: string;
+  /** Linha de letra, sem os colchetes. */
+  lyricRow: string;
+}
+
+/**
+ * Separa uma linha ChordPro em duas linhas alinhadas por coluna (acorde em cima da
+ * sílaba certa), para renderizar em fonte monoespaçada — usado no detalhe da música
+ * e no modo palco. Um `[` sem `]` correspondente é tratado como texto comum.
+ */
+export function parseChordLine(line: string): ChordLine {
+  let chordRow = "";
+  let lyricRow = "";
+  let i = 0;
+
+  while (i < line.length) {
+    if (line[i] === "[") {
+      const end = line.indexOf("]", i);
+      if (end === -1) {
+        lyricRow += line[i];
+        i += 1;
+        continue;
+      }
+      const chord = line.slice(i + 1, end);
+      if (chordRow.length < lyricRow.length) {
+        chordRow += " ".repeat(lyricRow.length - chordRow.length);
+      } else if (chordRow.length > lyricRow.length) {
+        chordRow += " ";
+      }
+      chordRow += chord;
+      i = end + 1;
+    } else {
+      lyricRow += line[i];
+      i += 1;
+    }
+  }
+
+  return { chordRow, lyricRow };
+}
+
+/** Aplica `parseChordLine` a um texto ChordPro inteiro, linha por linha. */
+export function parseChordProLines(chordpro: string): ChordLine[] {
+  return chordpro.split("\n").map(parseChordLine);
+}

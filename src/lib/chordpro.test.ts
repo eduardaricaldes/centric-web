@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toPlainLyrics, transposeChordPro, transposeTone } from "./chordpro";
+import { parseChordLine, toPlainLyrics, transposeChordPro, transposeTone } from "./chordpro";
 
 describe("toPlainLyrics", () => {
   it("remove os acordes e apara os dois lados da linha", () => {
@@ -66,6 +66,34 @@ describe("transposeChordPro — sufixos e conteúdo desconhecido", () => {
 
   it("transpõe vários acordes na mesma linha", () => {
     expect(transposeChordPro("[G]Amazing [C]grace [D]how", 2)).toBe("[A]Amazing [D]grace [E]how");
+  });
+});
+
+describe("parseChordLine", () => {
+  it("alinha o acorde na coluna da sílaba onde entra", () => {
+    expect(parseChordLine("Ama[G]zing gra[C]ce")).toEqual({
+      chordRow: "   G       C",
+      lyricRow: "Amazing grace",
+    });
+  });
+
+  it("acorde no início da linha fica na coluna 0", () => {
+    expect(parseChordLine("[G]Amazing grace")).toEqual({
+      chordRow: "G",
+      lyricRow: "Amazing grace",
+    });
+  });
+
+  it("linha sem acorde nenhum", () => {
+    expect(parseChordLine("Só letra")).toEqual({ chordRow: "", lyricRow: "Só letra" });
+  });
+
+  it("dois acordes seguidos sem letra entre eles ganham um espaço de separação", () => {
+    expect(parseChordLine("[G][C]word")).toEqual({ chordRow: "G C", lyricRow: "word" });
+  });
+
+  it("colchete sem fechamento é tratado como texto comum", () => {
+    expect(parseChordLine("texto [solto")).toEqual({ chordRow: "", lyricRow: "texto [solto" });
   });
 });
 
