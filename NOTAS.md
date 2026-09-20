@@ -61,6 +61,18 @@ cada etapa da seção 7 do BRIEFING.md.
   CORS da API (`http://localhost:5173,http://localhost:3000`), então um teste real
   pelo navegador nesta máquina exigiria liberar a porta 5173 primeiro.
 
+- **Escala e Pregação saíram da Etapa 4 e foram para a Etapa 5.** A tela "Evento"
+  (seção 6, tela 7) tem três abas — Repertório, Escala, Pregação — mas a seção 7 só
+  agenda "repertório com arrastar e soltar" na Etapa 4; Escala fica explícita na
+  Etapa 5, e Pregação não tem etapa dona. Decidi juntar Pregação com Escala na
+  Etapa 5 porque as duas precisam da mesma solução para escolher uma pessoa
+  (`GET /ministries/{id}/members`, sem `GET /users`) — dá pra construir a busca de
+  pessoa uma vez só e reusar nas duas abas. Etapa 4 entrega Repertório completo;
+  as outras duas abas mostram "ainda vai ser construída" por enquanto.
+
 ## O que falta (por etapa)
 
 - Etapa 0: concluída. Fundação, auth, layout protegido.
+- Etapa 4: concluída. Lista de eventos com filtros, formulário de evento, repertório
+  com arrastar/soltar (dnd-kit, otimista com reversão em erro), busca para adicionar
+  música. Escala e Pregação ficam para a Etapa 5 (ver decisão acima).

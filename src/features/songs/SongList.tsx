@@ -14,18 +14,10 @@ import { useAuth } from "../auth/AuthContext";
 import { formatTimestamp } from "../../lib/dates";
 import { isForbidden } from "../../lib/errors";
 import { canManageSongs } from "../../lib/permissions";
+import { useDebouncedValue } from "../../lib/useDebouncedValue";
 
 const LIMIT = 10;
 const DEBOUNCE_MS = 400;
-
-function useDebouncedText(value: string, delay: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
 
 export function SongList() {
   const { user } = useAuth();
@@ -38,8 +30,8 @@ export function SongList() {
 
   const [searchInput, setSearchInput] = useState(search);
   const [artistInput, setArtistInput] = useState(artist);
-  const debouncedSearch = useDebouncedText(searchInput, DEBOUNCE_MS);
-  const debouncedArtist = useDebouncedText(artistInput, DEBOUNCE_MS);
+  const debouncedSearch = useDebouncedValue(searchInput, DEBOUNCE_MS);
+  const debouncedArtist = useDebouncedValue(artistInput, DEBOUNCE_MS);
 
   useEffect(() => {
     setSearchParams((prev) => {
