@@ -3,7 +3,8 @@ import { Sidebar } from "../components/Sidebar";
 import { useAuth } from "../features/auth/AuthContext";
 import { getToken, setStoredRedirect } from "../lib/storage";
 
-export function ProtectedRoute() {
+/** Só garante a sessão — sem menu lateral. Usado direto pelo modo palco, que ocupa a janela inteira. */
+export function RequireAuth() {
   const { isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
 
@@ -28,6 +29,11 @@ export function ProtectedRoute() {
     return <Navigate to="/login" replace />;
   }
 
+  return <Outlet />;
+}
+
+/** Layout padrão: menu lateral fixo + conteúdo. Fica dentro de RequireAuth. */
+export function AppLayout() {
   return (
     <div className="flex min-h-screen bg-ivory">
       <Sidebar />
