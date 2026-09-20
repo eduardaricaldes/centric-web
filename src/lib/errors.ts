@@ -34,6 +34,31 @@ const KNOWN_DETAILS: Record<string, string> = {
   "AI suggestion is unavailable; continue in manual mode":
     "A IA está indisponível agora. Monte a programação manualmente.",
   "Song catalog is empty": "Cadastre músicas antes de pedir uma sugestão de programação.",
+
+  // Fase 6 (administração) — Etapa 9
+  "Invite token is required": "O cadastro é só por convite. Peça um link a quem administra.",
+  "Invalid invite token": "Este link de convite não é válido.",
+  "Invite already used": "Este convite já foi usado.",
+  "Invite expired": "Este convite expirou. Peça um novo a quem administra.",
+  "Invite does not match this email": "Este convite foi feito para outro e-mail.",
+  "Invalid reset token": "Este link de redefinição não é válido.",
+  "Reset token already used": "Este link de redefinição já foi usado.",
+  "Reset token expired": "Este link expirou. Peça um novo a quem administra.",
+  "Current password is incorrect": "A senha atual está incorreta.",
+  "An admin cannot demote themselves": "Um administrador não pode rebaixar a si mesmo.",
+  "Cannot remove the last admin":
+    "Não é possível rebaixar: precisa restar pelo menos um administrador no sistema.",
+  "User is already a member of this ministry": "Esta pessoa já é membro deste ministério.",
+  "Only ADMIN can set a member as LEADER": "Só um administrador pode definir alguém como líder.",
+  "Ministry name already in use": "Já existe um ministério com esse nome.",
+  "Leaders can only invite MEMBER": "Líderes só podem convidar para o papel de membro.",
+  "Leaders must invite to a ministry they lead":
+    "Líderes só podem convidar gente para o ministério que lideram.",
+  "Email already has an account": "Este e-mail já tem uma conta.",
+  "Ministry member not found": "Esta pessoa não é membro deste ministério.",
+  "Invite not found": "Convite não encontrado.",
+  "Only the creator or an ADMIN can cancel this invite":
+    "Só quem criou o convite ou um administrador pode cancelá-lo.",
 };
 
 const STATUS_FALLBACK: Record<number, string> = {
@@ -42,6 +67,7 @@ const STATUS_FALLBACK: Record<number, string> = {
   404: "Não encontrei o que você está procurando.",
   409: "Isso já existe ou entra em conflito com o que já está salvo.",
   422: "Não foi possível concluir: revise os campos e tente de novo.",
+  429: "Muitas tentativas. Espere um minuto e tente de novo.",
   500: "Algo deu errado no servidor. Tente novamente em um instante.",
   502: "A IA devolveu algo que não conseguimos usar. Tente de novo.",
   503: "Serviço indisponível agora. Tente novamente em um instante.",
