@@ -132,7 +132,7 @@ export function RosterTab({
   const groups = groupByMinistry(event.assignments);
 
   return (
-    <div className={`grid gap-6 ${canEdit ? "lg:grid-cols-[1fr_320px]" : ""}`}>
+    <div className={`grid gap-6 ${canEdit ? "xl:grid-cols-[1fr_320px]" : ""}`}>
       <div className="flex flex-col gap-5">
         {groups.size === 0 ? (
           <EmptyState

@@ -5,12 +5,12 @@ import { chordproOrFallback, getSong, hasRealChords } from "../../api/songs";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
-import { ErrorState } from "../../components/ErrorState";
+import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { SkeletonLines } from "../../components/Skeleton";
 import { IconChevronLeft, IconEdit, IconMusic } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
 import { formatTimestamp } from "../../lib/dates";
-import { isNotFound } from "../../lib/errors";
+import { isForbidden, isNotFound } from "../../lib/errors";
 import { canManageSongs } from "../../lib/permissions";
 import { parseChordProLines, transposeChordPro, transposeTone } from "../../lib/chordpro";
 
@@ -58,6 +58,7 @@ export function SongDetail() {
         />
       );
     }
+    if (isForbidden(error)) return <ForbiddenState />;
     return <ErrorState error={error} onRetry={() => refetch()} />;
   }
 

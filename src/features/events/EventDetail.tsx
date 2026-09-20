@@ -271,7 +271,7 @@ function RepertoireBoard({
   const addedIds = new Set(playlist.songs.map((item) => item.song_id));
 
   return (
-    <div className={`grid gap-6 ${canEdit ? "lg:grid-cols-[1fr_320px]" : ""}`}>
+    <div className={`grid gap-6 ${canEdit ? "xl:grid-cols-[1fr_320px]" : ""}`}>
       <div>
         {playlist.total_duration_min > 0 && (
           <p className="mb-3 text-sm text-muted">

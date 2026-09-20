@@ -115,3 +115,29 @@ cada etapa da seção 7 do BRIEFING.md.
   com os blocos, tempo somado contra o alvo, alertas, "Aplicar no repertório" e
   "Descartar". IA indisponível não quebra a tela (testado ao vivo, ver nota acima).
   Botão de acesso fica no cabeçalho do evento, visível para ADMIN/LEADER.
+- Etapa 8: concluída.
+  - Perfil real (`/profile`) com o interruptor de `prefers_chords`, salvando via
+    `PATCH /auth/me` — validado via curl.
+  - Removido `PlaceholderPage`, que não era mais usado em nenhuma rota (todas as
+    telas do BRIEFING existem de verdade agora).
+  - Reauditei os quatro estados obrigatórios em toda tela: `SongDetail` não tinha o
+    estado "sem permissão" (`ForbiddenState`), corrigido. As demais telas já tinham
+    os quatro; onde uma ação específica (ex.: escalar alguém, aplicar programação)
+    pode dar 403 mas a tela em si é de leitura livre, o erro aparece inline na ação,
+    não como página cheia de "sem permissão" — é a leitura mais correta da regra
+    3.1.9 ("esconder botão não é permissão") quando a maior parte da tela continua
+    utilizável.
+  - Responsivo até 1024px: troquei os layouts de duas colunas que usavam `lg:`
+    (ativa em 1024px de *viewport*) para `xl:` (1280px) em `SongForm`, `Home`,
+    `RosterTab` e `RepertoireBoard` — o menu lateral fixo de 264px + padding do
+    conteúdo deixa menos de 1024px reais disponíveis, então duas colunas com uma
+    coluna fixa de 320px cabiam apertado ou estourava exatamente no menor tamanho
+    que a etapa pede para funcionar. Não tive como testar isso com o navegador de
+    verdade nesta sessão (extensão do Chrome desconectada, ver nota acima) — foi
+    revisão de CSS/breakpoint, não verificação visual ao vivo.
+  - Nenhum texto em inglês encontrado numa varredura por `grep` em textos visíveis e
+    `aria-label`s. Nenhum `fetch` fora de `src/api/`. Nenhum `any` em `types.ts`.
+    Nenhum `dangerouslySetInnerHTML`. Nenhum `role === "ADMIN"` espalhado pelas
+    telas — tudo passa por `lib/permissions.ts`.
+  - Tamanho de fonte do modo palco: já salvo desde a Etapa 3 (`localStorage`, via
+    `lib/storage.ts`), sem trabalho adicional aqui.

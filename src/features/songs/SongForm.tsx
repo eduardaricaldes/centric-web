@@ -185,7 +185,7 @@ export function SongFormPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-2">
+      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 xl:grid-cols-2">
         <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6">
           <Input label="Título" error={errors.title?.message} {...register("title")} />
           <div className="flex gap-4">
@@ -219,7 +219,7 @@ export function SongFormPage() {
           </div>
         </div>
 
-        <div className="lg:sticky lg:top-6 lg:self-start">
+        <div className="xl:sticky xl:top-6 xl:self-start">
           <p className="mb-2 text-sm font-medium text-muted">Pré-visualização (modo palco)</p>
           <StagePreview chordpro={chordproValue} />
         </div>

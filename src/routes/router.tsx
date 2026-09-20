@@ -1,11 +1,11 @@
 import { createBrowserRouter } from "react-router-dom";
-import { PlaceholderPage } from "../components/PlaceholderPage";
 import { Login } from "../features/auth/Login";
 import { Register } from "../features/auth/Register";
 import { EventDetailRoute } from "../features/events/EventDetail";
 import { EventFormPage } from "../features/events/EventForm";
 import { EventList } from "../features/events/EventList";
 import { Home } from "../features/home/Home";
+import { Profile } from "../features/profile/Profile";
 import { ProgramPage } from "../features/program/ProgramPage";
 import { SongDetailRoute } from "../features/songs/SongDetail";
 import { SongFormPage } from "../features/songs/SongForm";
@@ -32,7 +32,7 @@ export const router = createBrowserRouter([
           { path: "/events/:id", element: <EventDetailRoute /> },
           { path: "/events/:id/edit", element: <EventFormPage /> },
           { path: "/events/:id/program", element: <ProgramPage /> },
-          { path: "/profile", element: <PlaceholderPage title="Perfil" /> },
+          { path: "/profile", element: <Profile /> },
         ],
       },
       // Modo palco ocupa a janela inteira: fora do layout com menu lateral.
