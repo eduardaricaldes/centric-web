@@ -7,6 +7,7 @@ import { EventFormPage } from "../features/events/EventForm";
 import { EventList } from "../features/events/EventList";
 import { Home } from "../features/home/Home";
 import { SongDetailRoute } from "../features/songs/SongDetail";
+import { SongFormPage } from "../features/songs/SongForm";
 import { SongList } from "../features/songs/SongList";
 import { StageRoute } from "../features/stage/Stage";
 import { AppLayout, RequireAuth } from "./ProtectedRoute";
@@ -22,9 +23,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "/", element: <Home /> },
           { path: "/songs", element: <SongList /> },
-          { path: "/songs/new", element: <PlaceholderPage title="Nova música" /> },
+          { path: "/songs/new", element: <SongFormPage /> },
           { path: "/songs/:id", element: <SongDetailRoute /> },
-          { path: "/songs/:id/edit", element: <PlaceholderPage title="Editar música" /> },
+          { path: "/songs/:id/edit", element: <SongFormPage /> },
           { path: "/events", element: <EventList /> },
           { path: "/events/new", element: <EventFormPage /> },
           { path: "/events/:id", element: <EventDetailRoute /> },
