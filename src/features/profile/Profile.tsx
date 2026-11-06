@@ -10,6 +10,7 @@ import { Card } from "../../components/Card";
 import { Input } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
 import { getErrorMessage } from "../../lib/errors";
+import { setStoredRole, setToken } from "../../lib/storage";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABEL } from "../admin/labels";
 
@@ -102,10 +103,12 @@ function ChangePasswordCard() {
     setSubmitError(null);
     setSuccess(false);
     try {
-      await changePassword({
+      const { access_token, role } = await changePassword({
         current_password: values.currentPassword,
         new_password: values.newPassword,
       });
+      setToken(access_token);
+      setStoredRole(role);
       setSuccess(true);
       reset();
     } catch (error) {

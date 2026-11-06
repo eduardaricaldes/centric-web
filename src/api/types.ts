@@ -217,6 +217,7 @@ export interface MinistrySummary {
 export interface MinistryItem {
   id: number;
   name: string;
+  description: string | null;
 }
 
 export interface MinistryListResponse {

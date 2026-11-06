@@ -17,6 +17,10 @@ const KNOWN_DETAILS: Record<string, string> = {
   "Assignment not found": "Escala não encontrada.",
   "Preaching not found": "Pregação não encontrada.",
   "Program suggestion not found": "Sugestão de programação não encontrada.",
+  "Program not found": "Este culto ainda não tem programação definida.",
+  "A LEADER invite requires a ministry": "Escolha o ministério que a pessoa vai liderar.",
+  "User does not lead any ministry":
+    "Para ser líder, a pessoa precisa liderar um ministério. Defina isso na tela do ministério.",
   "Song already in this playlist": "Esta música já está no repertório.",
   "Event already has a playlist": "Este evento já tem um repertório.",
   "Program suggestion already applied": "Esta sugestão já foi aplicada.",

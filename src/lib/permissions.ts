@@ -51,6 +51,15 @@ export function canAdminister(user: User | null): boolean {
 }
 
 /**
+ * ADMIN gera link de senha para qualquer pessoa; LEADER, só para MEMBER do ministério
+ * que lidera. O front não sabe quais são esses ministérios, então para LEADER este
+ * helper só filtra pelo papel e a tela aguenta o 403 real.
+ */
+export function canResetPassword(user: User | null, target: User): boolean {
+  return user?.role === "ADMIN" || (user?.role === "LEADER" && target.role === "MEMBER");
+}
+
+/**
  * Ações que a API reserva a `require_admin`: promover/rebaixar administrador, criar e
  * editar ministério, marcar alguém como LEADER num ministério, e o seletor de papel
  * livre num convite. LEADER recebe 403 de verdade nessas rotas.

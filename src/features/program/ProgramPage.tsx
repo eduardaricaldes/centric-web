@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueries } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
 import { z } from "zod";
-import { applyProgram, suggestProgram } from "../../api/programs";
+import { ApiError } from "../../api/client";
+import { applyProgram, getAppliedProgram, suggestProgram } from "../../api/programs";
 import { getSong } from "../../api/songs";
 import type { ProgramSuggestion } from "../../api/types";
 import { Badge } from "../../components/Badge";
@@ -13,6 +14,8 @@ import { Input, Textarea } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
 import { IconAlertTriangle, IconCalendar, IconMic, IconMusic, IconSparkles } from "../../components/icons";
 import { getErrorMessage } from "../../lib/errors";
+import { isEventCollaborator } from "../../lib/permissions";
+import { useAuth } from "../auth/AuthContext";
 
 const suggestSchema = z.object({
   briefing: z.string().min(10, "Descreva o culto com pelo menos 10 caracteres"),
@@ -157,7 +160,18 @@ function ProgramTimeline({
 export function ProgramPage() {
   const { id } = useParams<{ id: string }>();
   const eventId = Number(id);
+  const { user } = useAuth();
+  const canSuggest = isEventCollaborator(user);
+  const queryClient = useQueryClient();
   const [suggestion, setSuggestion] = useState<ProgramSuggestion | null>(null);
+  const [replacing, setReplacing] = useState(false);
+
+  const appliedQuery = useQuery({
+    queryKey: ["applied-program", eventId],
+    queryFn: () => getAppliedProgram(eventId),
+    retry: (count, error) => !(error instanceof ApiError && error.status === 404) && count < 2,
+  });
+  const applied = appliedQuery.data ?? null;
 
   const {
     register,
@@ -180,11 +194,30 @@ export function ProgramPage() {
   return (
     <div className="max-w-3xl">
       <PageHeader
-        title="Programação com IA"
-        description="Descreva o culto e a IA sugere um rascunho para revisar — nada entra no repertório sem você clicar em aplicar."
+        title={canSuggest ? "Programação com IA" : "Programação"}
+        description={
+          canSuggest
+            ? "Descreva o culto e a IA sugere um rascunho para revisar — nada entra no repertório sem você clicar em aplicar."
+            : "A ordem do culto, com músicas, momentos e pregação."
+        }
       />
 
-      {!suggestion ? (
+      {appliedQuery.isLoading ? (
+        <p className="text-sm text-muted">Carregando...</p>
+      ) : applied && !suggestion && !replacing ? (
+        <div>
+          <ProgramTimeline suggestion={applied} eventId={eventId} onApplied={() => undefined} />
+          {canSuggest && (
+            <div className="mt-4">
+              <Button variant="ghost" size="sm" onClick={() => setReplacing(true)}>
+                Gerar outra sugestão
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : !canSuggest ? (
+        <p className="text-sm text-muted">A programação deste culto ainda não foi definida.</p>
+      ) : !suggestion ? (
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6"
@@ -224,9 +257,10 @@ export function ProgramPage() {
           <ProgramTimeline
             suggestion={suggestion}
             eventId={eventId}
-            onApplied={() =>
-              setSuggestion((prev) => (prev ? { ...prev, applied_at: new Date().toISOString() } : prev))
-            }
+            onApplied={() => {
+              setSuggestion((prev) => (prev ? { ...prev, applied_at: new Date().toISOString() } : prev));
+              void queryClient.invalidateQueries({ queryKey: ["applied-program", eventId] });
+            }}
           />
           <div className="mt-4">
             <Button variant="ghost" size="sm" onClick={() => setSuggestion(null)}>

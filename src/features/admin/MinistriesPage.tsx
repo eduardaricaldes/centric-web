@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { createMinistry, listMinistries, updateMinistry } from "../../api/ministries";
-import type { MinistryDetail, MinistryItem } from "../../api/types";
+import type { MinistryItem } from "../../api/types";
 import { Button } from "../../components/Button";
 import { Dialog } from "../../components/Dialog";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
@@ -13,22 +13,6 @@ import { IconEdit, IconPlus } from "../../components/icons";
 import { getErrorMessage, isForbidden } from "../../lib/errors";
 import { isAdmin } from "../../lib/permissions";
 import { useAuth } from "../auth/AuthContext";
-
-/**
- * `GET /ministries/` só devolve {id, name} (regra do schema `MinistryItem`). A
- * descrição só existe na resposta de criar/editar — sem `GET /ministries/{id}`, não
- * há como recuperá-la de fora desta sessão. Guardamos aqui o que já vimos, para a
- * edição não aparecer vazia logo depois de criar. Ver NOTAS.md.
- */
-function useKnownDescriptions() {
-  const queryClient = useQueryClient();
-  const remember = (detail: MinistryDetail) => {
-    queryClient.setQueryData(["ministry-description", detail.id], detail.description);
-  };
-  const get = (id: number): string | null =>
-    queryClient.getQueryData<string | null>(["ministry-description", id]) ?? null;
-  return { remember, get };
-}
 
 interface MinistryFormValue {
   name: string;
@@ -94,7 +78,6 @@ export function MinistriesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const admin = isAdmin(user);
-  const knownDescriptions = useKnownDescriptions();
 
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<MinistryItem | null>(null);
@@ -106,18 +89,16 @@ export function MinistriesPage() {
 
   const createMutation = useMutation({
     mutationFn: (payload: { name: string; description?: string }) => createMinistry(payload),
-    onSuccess: (detail) => {
-      knownDescriptions.remember(detail);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ministries"] });
       setCreating(false);
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: { name: string; description?: string } }) =>
+    mutationFn: ({ id, payload }: { id: number; payload: { name: string; description: string | null } }) =>
       updateMinistry(id, payload),
-    onSuccess: (detail) => {
-      knownDescriptions.remember(detail);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ministries"] });
       setEditing(null);
     },
@@ -197,7 +178,7 @@ export function MinistriesPage() {
       {editing && (
         <MinistryFormDialog
           title={`Editar ${editing.name}`}
-          initial={{ name: editing.name, description: knownDescriptions.get(editing.id) ?? "" }}
+          initial={{ name: editing.name, description: editing.description ?? "" }}
           onClose={() => setEditing(null)}
           submitting={updateMutation.isPending}
           error={updateMutation.error}
@@ -206,7 +187,7 @@ export function MinistriesPage() {
               id: editing.id,
               payload: {
                 name: value.name.trim(),
-                description: value.description.trim() || undefined,
+                description: value.description.trim() || null,
               },
             })
           }

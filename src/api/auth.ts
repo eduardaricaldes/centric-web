@@ -34,8 +34,9 @@ export function updateMe(payload: UpdateMePayload): Promise<User> {
   });
 }
 
-export function changePassword(payload: ChangePasswordPayload): Promise<void> {
-  return apiRequest<void>("/auth/change-password", {
+/** A API derruba os tokens antigos e devolve um novo, que mantém esta sessão. */
+export function changePassword(payload: ChangePasswordPayload): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>("/auth/change-password", {
     method: "POST",
     json: payload,
   });

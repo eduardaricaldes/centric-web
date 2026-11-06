@@ -49,7 +49,7 @@ function CreateInviteDialog({ onClose, onCreated }: { onClose: () => void; onCre
         email: email.trim() || undefined,
         role: admin ? role : "MEMBER",
         ministry_id: ministryId === "" ? null : ministryId,
-        ministry_role: ministryRole,
+        ministry_role: admin ? ministryRole : "MEMBER",
         instrument: instrument.trim() || undefined,
       }),
     onSuccess: (invite) => onCreated(invite),
@@ -57,7 +57,8 @@ function CreateInviteDialog({ onClose, onCreated }: { onClose: () => void; onCre
 
   // Líder só convida para o ministério que lidera; a API confere de verdade, mas o
   // front nem deixa enviar sem escolher um (regra 3.2 "quem convida quem").
-  const canSubmit = admin || ministryId !== "";
+  // Papel de líder exige ministério: é liderando um que a pessoa vira líder.
+  const canSubmit = ministryId !== "" || (admin && role !== "LEADER");
 
   return (
     <Dialog title="Novo convite" onClose={onClose}>
@@ -87,12 +88,15 @@ function CreateInviteDialog({ onClose, onCreated }: { onClose: () => void; onCre
         )}
 
         <Select
-          label={admin ? "Ministério (opcional)" : "Ministério"}
+          label={admin && role !== "LEADER" ? "Ministério (opcional)" : "Ministério"}
           value={ministryId}
           onChange={(event) => setMinistryId(event.target.value ? Number(event.target.value) : "")}
         >
-          {admin && <option value="">Nenhum</option>}
-          {!admin && <option value="">Selecione...</option>}
+          {admin && role !== "LEADER" ? (
+            <option value="">Nenhum</option>
+          ) : (
+            <option value="">Selecione...</option>
+          )}
           {ministriesQuery.data?.items.map((ministry) => (
             <option key={ministry.id} value={ministry.id}>
               {ministry.name}
@@ -100,15 +104,20 @@ function CreateInviteDialog({ onClose, onCreated }: { onClose: () => void; onCre
           ))}
         </Select>
 
-        <Select
-          label="Papel no ministério"
-          value={ministryRole}
-          onChange={(event) => setMinistryRole(event.target.value as MinistryRole)}
-          disabled={ministryId === ""}
-        >
-          <option value="MEMBER">Membro</option>
-          <option value="LEADER">Líder</option>
-        </Select>
+        {admin && role !== "LEADER" && role !== "ADMIN" && (
+          <Select
+            label="Papel no ministério"
+            value={ministryRole}
+            onChange={(event) => setMinistryRole(event.target.value as MinistryRole)}
+            disabled={ministryId === ""}
+          >
+            <option value="MEMBER">Membro</option>
+            <option value="LEADER">Líder</option>
+          </Select>
+        )}
+        {admin && role === "LEADER" && (
+          <p className="text-sm text-muted">A pessoa vai liderar o ministério escolhido.</p>
+        )}
 
         <Input
           label="Instrumento (opcional)"

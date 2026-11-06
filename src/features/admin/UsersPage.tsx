@@ -13,8 +13,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { SkeletonTable } from "../../components/Skeleton";
 import { IconChevronLeft, IconChevronRight, IconKey } from "../../components/icons";
 import { formatTimestamp } from "../../lib/dates";
-import { isForbidden } from "../../lib/errors";
-import { isAdmin } from "../../lib/permissions";
+import { getErrorMessage, isForbidden } from "../../lib/errors";
+import { canResetPassword, isAdmin } from "../../lib/permissions";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useAuth } from "../auth/AuthContext";
 import { ROLE_LABEL, ROLE_TONE } from "./labels";
@@ -37,7 +37,7 @@ function ResetPasswordDialog({ user, onClose }: { user: User; onClose: () => voi
   return (
     <Dialog title={`Link de nova senha para ${user.name}`} onClose={onClose}>
       {mutation.isPending && <p className="text-sm text-muted">Gerando link...</p>}
-      {mutation.isError && <p className="text-sm text-red">Não foi possível gerar o link.</p>}
+      {mutation.isError && <p className="text-sm text-red">{getErrorMessage(mutation.error)}</p>}
       {link && mutation.data && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-amber-ink">
@@ -150,14 +150,16 @@ export function UsersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<IconKey width={15} height={15} />}
-                        onClick={() => setResetTarget(item)}
-                      >
-                        Gerar link
-                      </Button>
+                      {canResetPassword(currentUser, item) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<IconKey width={15} height={15} />}
+                          onClick={() => setResetTarget(item)}
+                        >
+                          Gerar link
+                        </Button>
+                      )}
                       {admin && item.role !== "ADMIN" && (
                         <Button
                           variant="secondary"

@@ -224,3 +224,16 @@ schemas e modelos), não só contra o documento.
   aparece em Pessoas" (seção 5 do BRIEFING-ADMIN) não foi exercitado ponta a ponta
   contra uma API rodando. Recomendo rodar esse fluxo manualmente antes de considerar
   a etapa fechada de fato.
+
+## Publicação
+
+- **Descrição de ministério vem da API.** `GET /ministries/` agora traz `description`, então o cache local
+  da Etapa 9 saiu, e apagar a descrição pela tela passou a funcionar.
+- **`POST /auth/change-password` devolve um token novo.** A API derruba os tokens antigos ao trocar a senha,
+  e o perfil guarda o novo para a sessão continuar.
+- **Link de senha:** a API só libera para LEADER quando o alvo é `MEMBER` do ministério que ele lidera. Para
+  o líder, o botão some nas linhas de ADMIN e LEADER, e o 403 aparece no diálogo para membro de outro
+  ministério.
+- **Convite:** `LEADER` não escolhe mais o papel no ministério, e papel de líder exige ministério.
+- **`/events/:id/program`** agora mostra a programação aplicada (`GET /events/{id}/program`), e membros também
+  têm acesso, só para leitura.
