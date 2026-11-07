@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type Tone = "neutral" | "amber" | "green" | "red" | "north";
+export type Tone = "neutral" | "amber" | "green" | "red" | "north";
 
 const TONE_CLASSES: Record<Tone, string> = {
   neutral: "bg-ivory text-muted border-line",

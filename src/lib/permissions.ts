@@ -40,3 +40,21 @@ export function isEventCollaborator(user: User | null): boolean {
 export function canRespondToAssignment(user: User | null, assignment: Assignment): boolean {
   return user !== null && user.id === assignment.user_id;
 }
+
+/**
+ * Seção Administração (Etapa 9): visível para ADMIN e LEADER. Cada tela dentro dela
+ * ainda distingue o que cada um pode fazer — este helper só decide se a seção existe
+ * para essa pessoa, tanto no menu quanto na proteção da rota.
+ */
+export function canAdminister(user: User | null): boolean {
+  return user?.role === "ADMIN" || user?.role === "LEADER";
+}
+
+/**
+ * Ações que a API reserva a `require_admin`: promover/rebaixar administrador, criar e
+ * editar ministério, marcar alguém como LEADER num ministério, e o seletor de papel
+ * livre num convite. LEADER recebe 403 de verdade nessas rotas.
+ */
+export function isAdmin(user: User | null): boolean {
+  return user?.role === "ADMIN";
+}

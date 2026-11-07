@@ -1,6 +1,8 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { ForbiddenState } from "../components/ErrorState";
 import { Sidebar } from "../components/Sidebar";
 import { useAuth } from "../features/auth/AuthContext";
+import { canAdminister } from "../lib/permissions";
 import { getToken, setStoredRedirect } from "../lib/storage";
 
 /** Só garante a sessão — sem menu lateral. Usado direto pelo modo palco, que ocupa a janela inteira. */
@@ -29,6 +31,22 @@ export function RequireAuth() {
     return <Navigate to="/login" replace />;
   }
 
+  return <Outlet />;
+}
+
+/**
+ * Protege /admin/* de verdade — digitar a URL direto não abre a tela mesmo com o
+ * menu escondido para quem não é ADMIN/LEADER (regra 5 do BRIEFING-ADMIN).
+ */
+export function RequireAdministration() {
+  const { user } = useAuth();
+  if (!canAdminister(user)) {
+    return (
+      <div className="mx-auto max-w-lg py-10">
+        <ForbiddenState message="Esta área é só para administração (ADMIN ou LEADER)." />
+      </div>
+    );
+  }
   return <Outlet />;
 }
 

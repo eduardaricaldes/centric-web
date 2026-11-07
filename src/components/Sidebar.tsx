@@ -1,6 +1,17 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
-import { IconCalendar, IconFlame, IconHome, IconLogout, IconMusic, IconUser } from "./icons";
+import { canAdminister } from "../lib/permissions";
+import {
+  IconCalendar,
+  IconFlame,
+  IconHome,
+  IconLink,
+  IconLogout,
+  IconMusic,
+  IconShield,
+  IconUser,
+  IconUsers,
+} from "./icons";
 
 const NAV_ITEMS = [
   { to: "/", label: "Início", icon: IconHome, end: true },
@@ -8,6 +19,39 @@ const NAV_ITEMS = [
   { to: "/events", label: "Eventos", icon: IconCalendar, end: false },
   { to: "/profile", label: "Perfil", icon: IconUser, end: false },
 ];
+
+const ADMIN_NAV_ITEMS = [
+  { to: "/admin/users", label: "Pessoas", icon: IconUsers, end: false },
+  { to: "/admin/ministries", label: "Ministérios", icon: IconShield, end: false },
+  { to: "/admin/invites", label: "Convites", icon: IconLink, end: false },
+];
+
+function NavItem({
+  to,
+  label,
+  icon: ItemIcon,
+  end,
+}: {
+  to: string;
+  label: string;
+  icon: typeof IconHome;
+  end: boolean;
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex h-11 items-center gap-3 rounded-field px-3 text-sm font-medium transition-colors ${
+          isActive ? "bg-north-tint text-north" : "text-ink hover:bg-ivory"
+        }`
+      }
+    >
+      <ItemIcon width={18} height={18} />
+      {label}
+    </NavLink>
+  );
+}
 
 export function Sidebar() {
   const { user, logout } = useAuth();
@@ -22,23 +66,20 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3">
-        {NAV_ITEMS.map(({ to, label, icon: ItemIcon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              `flex h-11 items-center gap-3 rounded-field px-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-north-tint text-north"
-                  : "text-ink hover:bg-ivory"
-              }`
-            }
-          >
-            <ItemIcon width={18} height={18} />
-            {label}
-          </NavLink>
+        {NAV_ITEMS.map((item) => (
+          <NavItem key={item.to} {...item} />
         ))}
+
+        {canAdminister(user) && (
+          <>
+            <p className="mt-4 px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+              Administração
+            </p>
+            {ADMIN_NAV_ITEMS.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </>
+        )}
       </nav>
 
       <div className="flex items-center gap-3 border-t border-line px-4 py-4">

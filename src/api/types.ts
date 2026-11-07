@@ -37,6 +37,18 @@ export interface UserSummary {
   name: string;
 }
 
+/** GET /users/ — só ADMIN/LEADER. */
+export interface UserListResponse {
+  total: number;
+  page: number;
+  limit: number;
+  items: User[];
+}
+
+export interface UserRoleUpdatePayload {
+  role: UserRole;
+}
+
 export interface LoginResponse {
   access_token: string;
   token_type: string;
@@ -48,10 +60,28 @@ export interface RegisterPayload {
   email: string;
   password: string;
   prefers_chords?: boolean;
+  /** Obrigatório desde a Fase 6 (Etapa 9): cadastro só acontece por convite. */
+  invite_token?: string;
 }
 
 export interface UpdateMePayload {
-  prefers_chords: boolean;
+  name?: string;
+  prefers_chords?: boolean;
+}
+
+export interface ChangePasswordPayload {
+  current_password: string;
+  new_password: string;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  new_password: string;
+}
+
+export interface PasswordResetTokenResponse {
+  token: string;
+  expires_at: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -194,12 +224,87 @@ export interface MinistryListResponse {
   items: MinistryItem[];
 }
 
+export type MinistryRole = "LEADER" | "MEMBER";
+
 /** GET /ministries/{id}/members — só ADMIN/LEADER. Sem e-mail nem dado sensível. */
 export interface MinistryMember {
   user_id: number;
   name: string;
-  role: "LEADER" | "MEMBER";
+  role: MinistryRole;
   instrument: string | null;
+}
+
+/** Resposta de POST/PATCH /ministries/ — só ADMIN. */
+export interface MinistryDetail {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+export interface MinistryCreatePayload {
+  name: string;
+  description?: string | null;
+}
+
+export interface MinistryUpdatePayload {
+  name?: string;
+  description?: string | null;
+}
+
+export interface MemberCreatePayload {
+  user_id: number;
+  role?: MinistryRole;
+  instrument?: string | null;
+}
+
+export interface MemberUpdatePayload {
+  role?: MinistryRole;
+  instrument?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Convites
+// ---------------------------------------------------------------------------
+
+export interface InviteCreatePayload {
+  email?: string | null;
+  role: UserRole;
+  ministry_id?: number | null;
+  ministry_role: MinistryRole;
+  instrument?: string | null;
+}
+
+/** Resposta de POST /invites/ — só aqui o token aparece, uma vez. */
+export interface InviteCreateResponse {
+  id: number;
+  token: string;
+  email: string | null;
+  role: UserRole;
+  ministry_id: number | null;
+  ministry_role: MinistryRole | null;
+  instrument: string | null;
+  expires_at: string;
+  created_at: string;
+}
+
+/** GET /invites/ — nunca traz o token de volta. */
+export interface InviteResponse {
+  id: number;
+  email: string | null;
+  role: UserRole;
+  ministry_id: number | null;
+  ministry_name: string | null;
+  ministry_role: MinistryRole | null;
+  instrument: string | null;
+  created_by: number;
+  created_by_name: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface InviteListResponse {
+  total: number;
+  items: InviteResponse[];
 }
 
 export interface Assignment {
@@ -282,7 +387,8 @@ export interface Event {
  * - `USER_MULTIPLE_MINISTRIES`: `user_id` + `ministry_ids` presentes.
  * - `SONG_RECENTLY_USED`: `song_id` presente (a música voltou a se repetir em
  *   menos de 28 dias, conferido contra `services/programs.py`).
- * Sempre mostre pelo `message`; trate os campos específicos como opcionais.
+ * O `message` vem em inglês: mostre via `warningLabel` (eventLabels.ts), que
+ * traduz pelo `code`. Trate os campos específicos como opcionais.
  */
 export interface EventWarning {
   code: string;

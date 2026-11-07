@@ -1,5 +1,12 @@
 import { apiRequest } from "./client";
-import type { LoginResponse, RegisterPayload, UpdateMePayload, User } from "./types";
+import type {
+  ChangePasswordPayload,
+  LoginResponse,
+  RegisterPayload,
+  ResetPasswordPayload,
+  UpdateMePayload,
+  User,
+} from "./types";
 
 export function login(email: string, password: string): Promise<LoginResponse> {
   // POST /auth/login exige application/x-www-form-urlencoded com o campo "username".
@@ -23,6 +30,21 @@ export function getMe(): Promise<User> {
 export function updateMe(payload: UpdateMePayload): Promise<User> {
   return apiRequest<User>("/auth/me", {
     method: "PATCH",
+    json: payload,
+  });
+}
+
+export function changePassword(payload: ChangePasswordPayload): Promise<void> {
+  return apiRequest<void>("/auth/change-password", {
+    method: "POST",
+    json: payload,
+  });
+}
+
+/** Pública: usada por quem recebeu um link de redefinição. Limite de 5/minuto. */
+export function resetPassword(payload: ResetPasswordPayload): Promise<void> {
+  return apiRequest<void>("/auth/reset-password", {
+    method: "POST",
     json: payload,
   });
 }
