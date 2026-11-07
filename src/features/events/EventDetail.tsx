@@ -6,6 +6,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type UniqueIdentifier,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -129,6 +130,7 @@ function SortableRepertoireRow({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
+    attributes: { roleDescription: "item reordenável" },
   });
 
   return (
@@ -235,9 +237,13 @@ function RepertoireBoard({
   const queryClient = useQueryClient();
   const playlist = event.playlist!;
   const sorted = [...playlist.songs].sort((a, b) => a.position - b.position);
-  const [order, setOrder] = useState<number[]>(sorted.map((s) => s.id));
+  // A ordem vem do servidor; só enquanto um arrastar é confirmado vale a ordem otimista.
+  const [pendingOrder, setPendingOrder] = useState<number[] | null>(null);
+  const order = pendingOrder ?? sorted.map((s) => s.id);
   const [reorderError, setReorderError] = useState<unknown>(null);
   const itemsById = new Map(playlist.songs.map((item) => [item.id, item]));
+  const songTitle = (id: UniqueIdentifier) => itemsById.get(Number(id))?.song.title ?? "Música";
+  const positionOf = (id: UniqueIdentifier) => order.indexOf(Number(id)) + 1;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -255,17 +261,14 @@ function RepertoireBoard({
     const newIndex = order.indexOf(Number(over.id));
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const previous = order;
     const next = arrayMove(order, oldIndex, newIndex);
-    setOrder(next);
+    setPendingOrder(next);
     setReorderError(null);
 
     reorderPlaylistSongs(playlist.id, { item_ids: next })
       .then(() => queryClient.invalidateQueries({ queryKey: ["event", eventId] }))
-      .catch((err: unknown) => {
-        setOrder(previous);
-        setReorderError(err);
-      });
+      .catch((err: unknown) => setReorderError(err))
+      .finally(() => setPendingOrder(null));
   };
 
   const addedIds = new Set(playlist.songs.map((item) => item.song_id));
@@ -289,10 +292,28 @@ function RepertoireBoard({
           <EmptyState
             icon={<IconMusic width={28} height={28} />}
             title="Nenhuma música no repertório"
-            description="Use a busca ao lado para adicionar."
+            description={canEdit ? "Use a busca para adicionar." : "As músicas aparecem aqui quando forem adicionadas."}
           />
         ) : canEdit ? (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            accessibility={{
+              screenReaderInstructions: {
+                draggable:
+                  "Para pegar a música, pressione espaço ou Enter. Use as setas para mover e espaço ou Enter para soltar. Esc cancela.",
+              },
+              announcements: {
+                onDragStart: ({ active }) => `${songTitle(active.id)} selecionada.`,
+                onDragOver: ({ active, over }) =>
+                  over ? `${songTitle(active.id)} sobre a posição ${positionOf(over.id)}.` : undefined,
+                onDragEnd: ({ active, over }) =>
+                  over ? `${songTitle(active.id)} movida para a posição ${positionOf(over.id)}.` : undefined,
+                onDragCancel: ({ active }) => `Movimento de ${songTitle(active.id)} cancelado.`,
+              },
+            }}
+          >
             <SortableContext items={order} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-2">
                 {order.map((id, index) => {
@@ -353,7 +374,11 @@ function RepertoireTab({
       <EmptyState
         icon={<IconMusic width={28} height={28} />}
         title="Nenhum repertório ainda"
-        description="Crie o repertório deste evento para começar a montar a lista de músicas."
+        description={
+          canEdit
+            ? "Crie o repertório deste evento para começar a montar a lista de músicas."
+            : "O repertório deste evento ainda não foi montado."
+        }
         action={
           canEdit ? (
             <Button

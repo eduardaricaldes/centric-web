@@ -237,3 +237,18 @@ schemas e modelos), não só contra o documento.
 - **Convite:** `LEADER` não escolhe mais o papel no ministério, e papel de líder exige ministério.
 - **`/events/:id/program`** agora mostra a programação aplicada (`GET /events/{id}/program`), e membros também
   têm acesso, só para leitura.
+
+## Correções depois do teste real no navegador (06/11/2026)
+
+Primeira rodada clicando de verdade, com API e banco temporários, como ADMIN, LEADER e MEMBER.
+
+- **Modo palco: a música inteira cabe por ajuste de fonte e colunas.** `useFitLyrics` em
+  `Stage.tsx` mede no DOM e escolhe a maior fonte até o tamanho salvo pela pessoa, tentando 2,
+  1, 3 e 4 colunas, nessa ordem de preferência (duas colunas continua sendo o padrão da seção
+  6). O A+ passa a ser um teto: numa música longa, ele pode não mudar nada. Mínimo de 14px. Se
+  nem assim couber, a música sai das colunas e rola na vertical, o que acontece com cifra de 40
+  linhas em 1024x768. A regra "sem rolagem" cede aí porque a alternativa era letra ilegível.
+- **Erro de rede ou 500 em `/auth/me` não derruba mais a sessão.** `RequireAuth` mostra o erro
+  com "Tentar de novo" e mantém o token. Só 401 leva ao login.
+- **Salvar música navega depois de desligar a trava de saída.** Antes o `useBlocker` barrava a
+  própria navegação do salvar, e a tela pedia confirmação de alterações já salvas.

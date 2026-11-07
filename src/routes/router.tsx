@@ -17,41 +17,48 @@ import { SongFormPage } from "../features/songs/SongForm";
 import { SongList } from "../features/songs/SongList";
 import { StageRoute } from "../features/stage/Stage";
 import { AppLayout, RequireAdministration, RequireAuth } from "./ProtectedRoute";
+import { NotFoundPage, RouteErrorPage } from "./RouteFallbacks";
 
 export const router = createBrowserRouter([
-  { path: "/login", element: <Login /> },
-  { path: "/register", element: <Register /> },
-  { path: "/reset-password", element: <ResetPassword /> },
   {
-    element: <RequireAuth />,
+    errorElement: <RouteErrorPage />,
     children: [
+      { path: "/login", element: <Login /> },
+      { path: "/register", element: <Register /> },
+      { path: "/reset-password", element: <ResetPassword /> },
       {
-        element: <AppLayout />,
+        element: <RequireAuth />,
         children: [
-          { path: "/", element: <Home /> },
-          { path: "/songs", element: <SongList /> },
-          { path: "/songs/new", element: <SongFormPage /> },
-          { path: "/songs/:id", element: <SongDetailRoute /> },
-          { path: "/songs/:id/edit", element: <SongFormPage /> },
-          { path: "/events", element: <EventList /> },
-          { path: "/events/new", element: <EventFormPage /> },
-          { path: "/events/:id", element: <EventDetailRoute /> },
-          { path: "/events/:id/edit", element: <EventFormPage /> },
-          { path: "/events/:id/program", element: <ProgramPage /> },
-          { path: "/profile", element: <Profile /> },
           {
-            element: <RequireAdministration />,
+            element: <AppLayout />,
             children: [
-              { path: "/admin/users", element: <UsersPage /> },
-              { path: "/admin/ministries", element: <MinistriesPage /> },
-              { path: "/admin/ministries/:id", element: <MinistryMembersPage /> },
-              { path: "/admin/invites", element: <InvitesPage /> },
+              { path: "/", element: <Home /> },
+              { path: "/songs", element: <SongList /> },
+              { path: "/songs/new", element: <SongFormPage /> },
+              { path: "/songs/:id", element: <SongDetailRoute /> },
+              { path: "/songs/:id/edit", element: <SongFormPage /> },
+              { path: "/events", element: <EventList /> },
+              { path: "/events/new", element: <EventFormPage /> },
+              { path: "/events/:id", element: <EventDetailRoute /> },
+              { path: "/events/:id/edit", element: <EventFormPage /> },
+              { path: "/events/:id/program", element: <ProgramPage /> },
+              { path: "/profile", element: <Profile /> },
+              { path: "*", element: <NotFoundPage /> },
+              {
+                element: <RequireAdministration />,
+                children: [
+                  { path: "/admin/users", element: <UsersPage /> },
+                  { path: "/admin/ministries", element: <MinistriesPage /> },
+                  { path: "/admin/ministries/:id", element: <MinistryMembersPage /> },
+                  { path: "/admin/invites", element: <InvitesPage /> },
+                ],
+              },
             ],
           },
+          // Modo palco ocupa a janela inteira: fora do layout com menu lateral.
+          { path: "/events/:id/stage", element: <StageRoute /> },
         ],
       },
-      // Modo palco ocupa a janela inteira: fora do layout com menu lateral.
-      { path: "/events/:id/stage", element: <StageRoute /> },
     ],
   },
 ]);

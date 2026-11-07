@@ -29,7 +29,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
             <IconFlame width={28} height={28} />
           </div>
           <h1 className="font-display text-2xl font-semibold text-ink">Criar conta</h1>
-          <p className="text-sm text-muted">Você entra como membro da comunidade</p>
+          <p className="text-sm text-muted">Preencha seus dados para entrar no Centric</p>
         </div>
         {children}
       </div>

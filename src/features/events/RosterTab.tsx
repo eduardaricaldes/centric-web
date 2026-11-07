@@ -138,7 +138,7 @@ export function RosterTab({
           <EmptyState
             icon={<IconMic width={28} height={28} />}
             title="Ninguém escalado ainda"
-            description="Use o painel ao lado para escalar a primeira pessoa."
+            description={canEdit ? "Use o painel para escalar a primeira pessoa." : "As pessoas aparecem aqui quando forem escaladas."}
           />
         ) : (
           Array.from(groups.entries()).map(([ministryName, assignments]) => (

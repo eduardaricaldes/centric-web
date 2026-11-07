@@ -20,6 +20,7 @@ const songSchema = z.object({
   artist: z.string().optional(),
   tone: z.string().optional(),
   category: z.string().optional(),
+  duration_min: z.string().regex(/^$|^[1-9]\d*$/, "Use minutos inteiros").optional(),
   chordpro: z.string().min(1, "Escreva a letra (com ou sem cifra entre colchetes)"),
 });
 
@@ -53,11 +54,11 @@ function StagePreview({ chordpro }: { chordpro: string }) {
         </button>
       </div>
 
-      <div className="max-h-[28rem] overflow-y-auto text-sm">
+      <div className="max-h-[28rem] overflow-auto text-sm">
         {view === "chords" && lines
           ? lines.map((line, index) => (
-              <div key={index} className="mb-1.5 font-mono leading-tight">
-                <div className="text-amber">{line.chordRow || " "}</div>
+              <div key={index} className="mb-1.5 whitespace-pre font-mono leading-tight">
+                {line.chordRow && <div className="text-amber">{line.chordRow}</div>}
                 <div className="text-white">{line.lyricRow || " "}</div>
               </div>
             ))
@@ -79,7 +80,9 @@ export function SongFormPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [submitError, setSubmitError] = useState<unknown>(null);
-  const [saved, setSaved] = useState(false);
+  // Destino depois de salvar: o bloqueio de saída precisa desligar antes de navegar.
+  const [savedPath, setSavedPath] = useState<string | null>(null);
+  const saved = savedPath !== null;
 
   const {
     data: song,
@@ -105,6 +108,7 @@ export function SongFormPage() {
           artist: song.artist ?? "",
           tone: song.tone ?? "",
           category: song.category ?? "",
+          duration_min: song.duration_min?.toString() ?? "",
           chordpro: song.chordpro ?? song.lyrics,
         }
       : undefined,
@@ -121,6 +125,10 @@ export function SongFormPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty, saved]);
 
+  useEffect(() => {
+    if (savedPath) navigate(savedPath);
+  }, [savedPath, navigate]);
+
   const onSubmit = async (values: SongFormValues) => {
     setSubmitError(null);
     const payload = {
@@ -128,6 +136,7 @@ export function SongFormPage() {
       artist: values.artist || null,
       tone: values.tone || null,
       category: values.category || null,
+      duration_min: values.duration_min ? Number(values.duration_min) : null,
       chordpro: values.chordpro,
       lyrics: toPlainLyrics(values.chordpro),
     };
@@ -136,13 +145,11 @@ export function SongFormPage() {
         await updateSong(songId, payload);
         await queryClient.invalidateQueries({ queryKey: ["song", songId] });
         await queryClient.invalidateQueries({ queryKey: ["songs"] });
-        setSaved(true);
-        navigate(`/songs/${songId}`);
+        setSavedPath(`/songs/${songId}`);
       } else {
         const created = await createSong(payload);
         await queryClient.invalidateQueries({ queryKey: ["songs"] });
-        setSaved(true);
-        navigate(`/songs/${created.id}`);
+        setSavedPath(`/songs/${created.id}`);
       }
     } catch (err) {
       setSubmitError(err);
@@ -192,7 +199,17 @@ export function SongFormPage() {
             <Input label="Artista" className="flex-1" {...register("artist")} />
             <Input label="Tom original" className="w-32" placeholder="Ex.: G" {...register("tone")} />
           </div>
-          <Input label="Categoria" placeholder="Ex.: Adoração" {...register("category")} />
+          <div className="flex gap-4">
+            <Input label="Categoria" className="flex-1" placeholder="Ex.: Adoração" {...register("category")} />
+            <Input
+              label="Duração (min)"
+              className="w-32"
+              inputMode="numeric"
+              placeholder="Ex.: 5"
+              error={errors.duration_min?.message}
+              {...register("duration_min")}
+            />
+          </div>
 
           <Textarea
             label="Letra / cifra (ChordPro)"

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMe } from "../../api/auth";
+import { NetworkError } from "../../api/client";
 import { clearToken, getToken } from "../../lib/storage";
 import type { User } from "../../api/types";
 
@@ -19,11 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const hasToken = Boolean(getToken());
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isFetching, error, refetch } = useQuery({
     queryKey: ["me"],
     queryFn: getMe,
     enabled: hasToken,
-    retry: false,
+    // Internet ruim da igreja: tenta de novo só em erro de rede, nunca em resposta da API.
+    retry: (failureCount, queryError) => queryError instanceof NetworkError && failureCount < 2,
     staleTime: 60_000,
   });
 
@@ -36,13 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user: data ?? null,
-      isLoading: hasToken && isLoading,
+      isLoading: hasToken && !data && isFetching,
       error,
       isAuthenticated: hasToken && Boolean(data),
       refetchUser: () => void refetch(),
       logout,
     }),
-    [data, isLoading, error, hasToken, refetch, logout],
+    [data, isFetching, error, hasToken, refetch, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

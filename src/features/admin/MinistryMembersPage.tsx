@@ -246,7 +246,7 @@ export function MinistryMembersPage() {
             <EmptyState
               icon={<IconUsers width={28} height={28} />}
               title="Ninguém neste ministério ainda"
-              description={canEdit ? "Use o painel ao lado para adicionar a primeira pessoa." : undefined}
+              description={canEdit ? "Use o painel para adicionar a primeira pessoa." : undefined}
             />
           ) : (
             <div className="flex flex-col gap-2">

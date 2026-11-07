@@ -138,7 +138,10 @@ function MyAssignmentsCard() {
   const respondMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: "CONFIRMADO" | "RECUSADO" }) =>
       respondToAssignment(id, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-assignments"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["event"] });
+    },
   });
 
   return (
@@ -211,7 +214,7 @@ export function Home() {
 
   return (
     <div>
-      <p className="mb-1 text-sm capitalize text-muted">{formatDateLong(todayIso())}</p>
+      <p className="mb-1 text-sm text-muted first-letter:uppercase">{formatDateLong(todayIso())}</p>
       <h1 className="mb-6 font-display text-2xl font-semibold tracking-tight text-ink">Início</h1>
 
       <div className="mb-6">

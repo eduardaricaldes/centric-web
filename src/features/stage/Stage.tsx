@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getEventForStage } from "../../api/events";
 import type { PlaylistSong } from "../../api/types";
@@ -16,6 +16,10 @@ const MIN_FONT = 18;
 const MAX_FONT = 64;
 const FONT_STEP = 2;
 const DEFAULT_FONT = 32;
+// A música inteira precisa caber na tela: a fonte escolhida é o teto, e encolhe até aqui.
+const MIN_FIT_FONT = 14;
+// Ordem de preferência: em empate de fonte, ganha a primeira.
+const COLUMN_OPTIONS = [2, 1, 3, 4];
 
 // --- Wake Lock (regra: onde não existir, ignora em silêncio) -----------------
 
@@ -49,6 +53,90 @@ function useWakeLock(): boolean {
   return active;
 }
 
+// --- Encaixe da música na tela ------------------------------------------------
+
+function overflowsWidth(element: HTMLElement): boolean {
+  if (element.scrollWidth > element.clientWidth + 1) return true;
+  // Linha de cifra não quebra: se passar da coluna, invade a vizinha sem aumentar o scrollWidth.
+  return Array.from(element.children).some((line) => line.scrollWidth > line.clientWidth + 1);
+}
+
+/** Maior fonte entre o mínimo e `maxSize` que não estoura; 0 se nem o mínimo couber. */
+function largestSize(maxSize: number, tryAt: (size: number) => boolean): number {
+  let low = MIN_FIT_FONT;
+  let high = maxSize;
+  let found = 0;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    if (tryAt(middle)) {
+      found = middle;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+  return found;
+}
+
+/**
+ * Procura a combinação de colunas e fonte que mostra a música inteira, com a maior fonte
+ * possível até `preferredSize`. Escreve direto no elemento porque medir exige aplicar cada
+ * tentativa no DOM. Se nada couber, sai das colunas e rola na vertical, com fonte legível.
+ */
+function useFitLyrics(
+  ref: RefObject<HTMLDivElement | null>,
+  preferredSize: number,
+  contentKey: string,
+) {
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const apply = (columns: number | "auto", size: number) => {
+      element.style.columnCount = String(columns);
+      element.style.fontSize = `${size}px`;
+    };
+
+    const fit = () => {
+      let bestColumns = 0;
+      let bestSize = 0;
+      for (const columns of COLUMN_OPTIONS) {
+        const size = largestSize(preferredSize, (candidate) => {
+          apply(columns, candidate);
+          return element.scrollHeight <= element.clientHeight + 1 && !overflowsWidth(element);
+        });
+        if (size > bestSize) {
+          bestColumns = columns;
+          bestSize = size;
+        }
+        if (bestSize === preferredSize) break;
+      }
+      if (bestSize > 0) {
+        apply(bestColumns, bestSize);
+        return;
+      }
+      const scrollSize = largestSize(preferredSize, (candidate) => {
+        apply("auto", candidate);
+        return !overflowsWidth(element);
+      });
+      apply("auto", scrollSize || MIN_FIT_FONT);
+    };
+
+    fit();
+    let cancelled = false;
+    // A fonte da web muda a largura do texto quando termina de carregar.
+    document.fonts?.ready.then(() => {
+      if (!cancelled) fit();
+    });
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [ref, preferredSize, contentKey]);
+}
+
 // --- Corpo da música (chave = id da música: zera a transposição ao trocar) ---
 
 function toneLabel(semitones: number): string {
@@ -74,6 +162,9 @@ function StageSongBody({
 
   const lines =
     view === "chords" ? parseChordProLines(transposeChordPro(rawChordpro, semitones)) : null;
+
+  const lyricsRef = useRef<HTMLDivElement>(null);
+  useFitLyrics(lyricsRef, fontSize, `${view}:${semitones}`);
 
   return (
     <div className="flex h-full flex-col">
@@ -113,19 +204,22 @@ function StageSongBody({
         )}
       </div>
 
-      <div
-        className="min-h-0 flex-1 overflow-y-auto"
-        style={{ fontSize, columnCount: 2, columnGap: "3rem" }}
-      >
+      <div ref={lyricsRef} className="min-h-0 flex-1 overflow-auto" style={{ columnGap: "3rem" }}>
         {view === "chords" && lines
           ? lines.map((line, index) => (
-              <div key={index} className="mb-2 break-inside-avoid font-mono leading-tight">
-                <div className="text-amber">{line.chordRow || " "}</div>
+              <div
+                key={index}
+                className="mb-[0.3em] break-inside-avoid whitespace-pre font-mono leading-tight"
+              >
+                {line.chordRow && <div className="text-amber">{line.chordRow}</div>}
                 <div className="text-white">{line.lyricRow || " "}</div>
               </div>
             ))
           : plainLyrics.split("\n").map((line, index) => (
-              <p key={index} className="mb-2 break-inside-avoid font-display leading-snug text-white">
+              <p
+                key={index}
+                className="mb-[0.3em] break-inside-avoid whitespace-pre-wrap font-display leading-snug text-white"
+              >
                 {line || " "}
               </p>
             ))}
