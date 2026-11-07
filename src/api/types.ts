@@ -387,7 +387,8 @@ export interface Event {
  * - `USER_MULTIPLE_MINISTRIES`: `user_id` + `ministry_ids` presentes.
  * - `SONG_RECENTLY_USED`: `song_id` presente (a música voltou a se repetir em
  *   menos de 28 dias, conferido contra `services/programs.py`).
- * Sempre mostre pelo `message`; trate os campos específicos como opcionais.
+ * O `message` vem em inglês: mostre via `warningLabel` (eventLabels.ts), que
+ * traduz pelo `code`. Trate os campos específicos como opcionais.
  */
 export interface EventWarning {
   code: string;
