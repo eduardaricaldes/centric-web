@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -11,5 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // .claude/worktrees guarda cópias do repositório de outras sessões.
+    exclude: [...configDefaults.exclude, ".claude/**"],
   },
 });
