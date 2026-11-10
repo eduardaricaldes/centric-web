@@ -484,3 +484,26 @@ export interface PageParams {
   page?: number;
   limit?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Links públicos de leitura (/share-links e /public/share/{token})
+// ---------------------------------------------------------------------------
+
+export type ShareLinkKind = "SONG" | "EVENT";
+
+export interface ShareLink {
+  id: number;
+  token: string;
+  kind: ShareLinkKind;
+  song_id: number | null;
+  event_id: number | null;
+  created_at: string;
+}
+
+export interface ShareLinkListResponse {
+  total: number;
+  items: ShareLink[];
+}
+
+/** O que se compartilha: uma música avulsa ou o repertório de um evento. */
+export type ShareTarget = { songId: number } | { eventId: number };

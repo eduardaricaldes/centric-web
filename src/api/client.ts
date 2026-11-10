@@ -5,6 +5,16 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 /** Rotas que não exigem (e não devem mandar) o header Authorization. */
 const PUBLIC_PATHS = ["/auth/login", "/auth/register", "/health/db"];
 
+/** Rota da API aberta a quem não tem conta (links públicos de letra). */
+export function isPublicApiPath(path: string): boolean {
+  return PUBLIC_PATHS.includes(path) || path.startsWith("/public/");
+}
+
+/** Página do site aberta a quem não tem conta: um 401 aqui não manda para o login. */
+export function isPublicPage(pathname: string): boolean {
+  return pathname.startsWith("/s/");
+}
+
 export class ApiError extends Error {
   readonly status: number;
   readonly detail: unknown;
@@ -44,6 +54,8 @@ function buildUrl(path: string, query?: RequestOptions["query"]): string {
 function handleUnauthorized(): void {
   const { pathname, search } = window.location;
   clearToken();
+  // Quem abre um link público com sessão vencida continua lendo a letra.
+  if (isPublicPage(pathname)) return;
   setStoredRedirect(pathname + search);
   window.location.href = "/login";
 }
@@ -54,7 +66,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { method = "GET", query, json, form, signal } = options;
   const headers: Record<string, string> = {};
-  const isPublic = PUBLIC_PATHS.includes(path);
+  const isPublic = isPublicApiPath(path);
 
   if (!isPublic) {
     const token = getToken();

@@ -63,6 +63,12 @@ const KNOWN_DETAILS: Record<string, string> = {
   "Invite not found": "Convite não encontrado.",
   "Only the creator or an ADMIN can cancel this invite":
     "Só quem criou o convite ou um administrador pode cancelá-lo.",
+
+  // Links públicos de leitura
+  "Share link manager access required":
+    "Você só pode compartilhar eventos dos ministérios que lidera.",
+  "Share link not found": "Este link já foi revogado.",
+  "Link not found": "Este link não está mais disponível.",
 };
 
 const STATUS_FALLBACK: Record<number, string> = {

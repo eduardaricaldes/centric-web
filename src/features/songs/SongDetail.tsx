@@ -9,6 +9,7 @@ import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { SkeletonLines } from "../../components/Skeleton";
 import { IconChevronLeft, IconEdit, IconMusic } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
+import { ShareButton } from "../share/ShareButton";
 import { formatTimestamp } from "../../lib/dates";
 import { isForbidden, isNotFound } from "../../lib/errors";
 import { canManageSongs } from "../../lib/permissions";
@@ -107,11 +108,14 @@ export function SongDetail() {
           </div>
         </div>
         {canManage && (
-          <Link to={`/songs/${song.id}/edit`}>
-            <Button variant="secondary" icon={<IconEdit width={16} height={16} />}>
-              Editar
-            </Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <ShareButton target={{ songId: song.id }} subject="a letra desta música" />
+            <Link to={`/songs/${song.id}/edit`}>
+              <Button variant="secondary" icon={<IconEdit width={16} height={16} />}>
+                Editar
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 
