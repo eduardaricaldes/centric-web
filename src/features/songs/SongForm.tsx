@@ -11,7 +11,7 @@ import { Input, Textarea } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
 import { SkeletonLines } from "../../components/Skeleton";
 import { useAuth } from "../auth/AuthContext";
-import { parseChordProLines, toPlainLyrics } from "../../lib/chordpro";
+import { normalizeChordPro, parseChordProLines, toLyricLines, toPlainLyrics } from "../../lib/chordpro";
 import { getErrorMessage, isForbidden, isNotFound } from "../../lib/errors";
 import { canManageSongs } from "../../lib/permissions";
 
@@ -29,7 +29,7 @@ type SongFormValues = z.infer<typeof songSchema>;
 function StagePreview({ chordpro }: { chordpro: string }) {
   const [view, setView] = useState<"lyrics" | "chords">("chords");
   const lines = view === "chords" ? parseChordProLines(chordpro) : null;
-  const plain = toPlainLyrics(chordpro);
+  const lyricLines = toLyricLines(chordpro);
 
   return (
     <div className="rounded-card bg-navy p-5">
@@ -56,17 +56,29 @@ function StagePreview({ chordpro }: { chordpro: string }) {
 
       <div className="max-h-[28rem] overflow-auto text-sm">
         {view === "chords" && lines
-          ? lines.map((line, index) => (
-              <div key={index} className="mb-1.5 whitespace-pre font-mono leading-tight">
-                {line.chordRow && <div className="text-amber">{line.chordRow}</div>}
-                <div className="text-white">{line.lyricRow || " "}</div>
-              </div>
-            ))
-          : plain.split("\n").map((line, index) => (
-              <p key={index} className="mb-1.5 font-display leading-snug text-white">
-                {line || " "}
-              </p>
-            ))}
+          ? lines.map((line, index) =>
+              line.section ? (
+                <p key={index} className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                  {line.section}
+                </p>
+              ) : (
+                <div key={index} className="mb-1.5 whitespace-pre font-mono leading-tight">
+                  {line.chordRow && <div className="text-amber">{line.chordRow}</div>}
+                  <div className="text-white">{line.lyricRow || " "}</div>
+                </div>
+              ),
+            )
+          : lyricLines.map((line, index) =>
+              line.section ? (
+                <p key={index} className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                  {line.text}
+                </p>
+              ) : (
+                <p key={index} className="mb-1.5 font-display leading-snug text-white">
+                  {line.text || " "}
+                </p>
+              ),
+            )}
       </div>
     </div>
   );
@@ -99,6 +111,7 @@ export function SongFormPage() {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<SongFormValues>({
     resolver: zodResolver(songSchema),
@@ -137,8 +150,8 @@ export function SongFormPage() {
       tone: values.tone || null,
       category: values.category || null,
       duration_min: values.duration_min ? Number(values.duration_min) : null,
-      chordpro: values.chordpro,
-      lyrics: toPlainLyrics(values.chordpro),
+      chordpro: normalizeChordPro(values.chordpro),
+      lyrics: toPlainLyrics(normalizeChordPro(values.chordpro)),
     };
     try {
       if (isEditing) {
@@ -213,11 +226,21 @@ export function SongFormPage() {
 
           <Textarea
             label="Letra / cifra (ChordPro)"
-            hint="Coloque o acorde entre colchetes na sílaba em que ele entra, ex.: Gra[C]ça."
+            hint="Cole a cifra como no site (acordes em cima da letra) ou escreva o acorde entre colchetes na sílaba: Gra[C]ça."
             mono
             rows={20}
             error={errors.chordpro?.message}
             {...register("chordpro")}
+            onPaste={(event) => {
+              // Depois que o texto colado entra no campo, converte acordes em cima da letra.
+              const target = event.currentTarget;
+              setTimeout(() => {
+                const converted = normalizeChordPro(target.value);
+                if (converted !== target.value) {
+                  setValue("chordpro", converted, { shouldDirty: true, shouldValidate: true });
+                }
+              });
+            }}
           />
 
           {submitError !== null && (

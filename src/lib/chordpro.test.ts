@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { parseChordLine, toPlainLyrics, transposeChordPro, transposeTone } from "./chordpro";
+import {
+  normalizeChordPro,
+  parseChordLine,
+  parseChordProLines,
+  toLyricLines,
+  toPlainLyrics,
+  transposeChordPro,
+  transposeTone,
+} from "./chordpro";
 
 describe("toPlainLyrics", () => {
   it("remove os acordes e apara os dois lados da linha", () => {
@@ -108,5 +116,76 @@ describe("transposeTone", () => {
 
   it("semitons = 0 devolve o tom original", () => {
     expect(transposeTone("Bb", 0)).toBe("Bb");
+  });
+});
+
+describe("normalizeChordPro — acordes em cima da letra", () => {
+  it("encaixa cada acorde na coluna em que estava, sobre a letra de baixo", () => {
+    const input = "G        D\nGrande é o Senhor";
+    expect(normalizeChordPro(input)).toBe("[G]Grande é [D]o Senhor");
+  });
+
+  it("acorde depois do fim da letra fica no fim, com espaço", () => {
+    expect(normalizeChordPro("Am        D    G\nReina o Senhor")).toBe(
+      "[Am]Reina o Se[D]nhor [G]",
+    );
+  });
+
+  it("aceita baixo, sufixos e bemol", () => {
+    expect(normalizeChordPro("Bb   F/A  Gm7(9)\nRendido estou")).toBe(
+      "[Bb]Rendi[F/A]do es[Gm7(9)]tou",
+    );
+  });
+
+  it("linha só de acordes sem letra embaixo vira acordes entre colchetes", () => {
+    expect(normalizeChordPro("Intro: G  D  Em\n\nG\nVerso")).toBe(
+      "Intro: [G]  [D]  [Em]\n\n[G]Verso",
+    );
+  });
+
+  it("cabeçalho entre colchetes vira comentário, acorde sozinho não", () => {
+    expect(normalizeChordPro("[Refrão]\n[C]")).toBe("{comment: Refrão}\n[C]");
+  });
+
+  it("rótulo e acordes na mesma linha viram comentário e linha de acordes", () => {
+    expect(normalizeChordPro("[Intro] G  D  Em")).toBe("{comment: Intro}\n[G]  [D]  [Em]");
+  });
+
+  it("não confunde palavra com acorde", () => {
+    const input = "E agora\nDe todo o coração\nAmor";
+    expect(normalizeChordPro(input)).toBe(input);
+  });
+
+  it("ChordPro já com colchetes passa intacto (pode chamar duas vezes)", () => {
+    const input = "{comment: Verso}\n[G]Grande é o Se[D]nhor";
+    expect(normalizeChordPro(input)).toBe(input);
+    expect(normalizeChordPro(normalizeChordPro("G\nLetra"))).toBe("[G]Letra");
+  });
+
+  it("transposeChordPro transpõe cifra colada com acordes em cima", () => {
+    expect(transposeChordPro("Bb      F\nRendido estou", 1)).toBe("[B]Rendido [F#]estou");
+  });
+});
+
+describe("diretivas", () => {
+  const song = "{title: Grande}\n{comment: Verso 1}\n[G]Grande\n{soc}\n[C]Aleluia\n{eoc}";
+
+  it("parseChordProLines esconde título e fim de seção e marca rótulos", () => {
+    const lines = parseChordProLines(song);
+    expect(lines.map((line) => line.section ?? line.lyricRow)).toEqual([
+      "Verso 1",
+      "Grande",
+      "Refrão",
+      "Aleluia",
+    ]);
+  });
+
+  it("toLyricLines tira acordes, diretivas escondidas e linhas só de acorde", () => {
+    expect(toLyricLines(`${song}\nG  D`)).toEqual([
+      { text: "Verso 1", section: true },
+      { text: "Grande" },
+      { text: "Refrão", section: true },
+      { text: "Aleluia" },
+    ]);
   });
 });

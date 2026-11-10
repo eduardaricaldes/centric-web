@@ -31,16 +31,19 @@ function NavItem({
   label,
   icon: ItemIcon,
   end,
+  onNavigate,
 }: {
   to: string;
   label: string;
   icon: typeof IconHome;
   end: boolean;
+  onNavigate?: () => void;
 }) {
   return (
     <NavLink
       to={to}
       end={end}
+      onClick={onNavigate}
       className={({ isActive }) =>
         `flex h-11 items-center gap-3 rounded-field px-3 text-sm font-medium transition-colors ${
           isActive ? "bg-north-tint text-north" : "text-ink hover:bg-ivory"
@@ -53,11 +56,21 @@ function NavItem({
   );
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  /** Abaixo de 1024px o menu vira gaveta: aberto ou fechado. Acima disso fica sempre fixo. */
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="flex h-screen w-[264px] shrink-0 flex-col border-r border-line bg-surface">
+    <aside
+      id="menu-principal"
+      className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[264px] shrink-0 flex-col border-r border-line bg-surface
+        transition-transform duration-200 lg:static lg:translate-x-0 ${open ? "translate-x-0 shadow-xl" : "-translate-x-full"}`}
+    >
       <div className="flex items-center gap-2.5 px-5 py-5">
         <div className="flex h-10 w-10 items-center justify-center rounded-[11px] bg-north text-white">
           <IconFlame width={22} height={22} />
@@ -67,7 +80,7 @@ export function Sidebar() {
 
       <nav className="flex flex-1 flex-col gap-1 px-3">
         {NAV_ITEMS.map((item) => (
-          <NavItem key={item.to} {...item} />
+          <NavItem key={item.to} {...item} onNavigate={onClose} />
         ))}
 
         {canAdminister(user) && (
@@ -76,7 +89,7 @@ export function Sidebar() {
               Administração
             </p>
             {ADMIN_NAV_ITEMS.map((item) => (
-              <NavItem key={item.to} {...item} />
+              <NavItem key={item.to} {...item} onNavigate={onClose} />
             ))}
           </>
         )}

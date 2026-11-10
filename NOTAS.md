@@ -252,3 +252,27 @@ Primeira rodada clicando de verdade, com API e banco temporários, como ADMIN, L
   com "Tentar de novo" e mantém o token. Só 401 leva ao login.
 - **Salvar música navega depois de desligar a trava de saída.** Antes o `useBlocker` barrava a
   própria navegação do salvar, e a tela pedia confirmação de alterações já salvas.
+
+## Segunda rodada como usuário (10/11/2026)
+
+Teste ponta a ponta clicando de verdade, com API e banco temporários: música com cifra, evento,
+repertório, convite → cadastro, escala, pregação, programação com IA, modo palco e celular.
+Cinco correções:
+
+- **Cifra colada de site (acordes em cima da letra) vira ChordPro.** `normalizeChordPro` em
+  `lib/chordpro.ts` encaixa cada acorde na coluna em que estava, transforma `[Refrão]` e
+  `[Intro] G D` em `{comment: ...}`, e é idempotente. Roda ao colar no formulário, ao salvar,
+  e também na hora de exibir/transpor, então músicas antigas salvas nesse formato já
+  transpõem certo sem precisar editar. Antes, o tom dizia "B (+1)" e os acordes ficavam em Bb.
+- **Diretivas ChordPro.** `{comment: Verso 1}`, `{soc}` etc. viram rótulo de parte; `{title}`,
+  `{artist}`, `{key}`, `{eoc}` e desconhecidas somem da tela. Vale para pré-visualização,
+  detalhe e palco. A visão "Letra" agora sai de `toLyricLines(chordpro)` em vez de
+  `song.lyrics`, porque a API ainda gera `lyrics` com `to_plain_lyrics` do Python, que não
+  conhece diretivas nem o formato de acordes em cima — **o `chordpro.py` da API precisa
+  ganhar a mesma conversão** para que `lyrics` salvo no banco fique limpo.
+- **Celular.** Abaixo de 1024px o menu lateral vira gaveta, aberta por um botão na barra do
+  topo, fechando ao navegar, com Esc ou tocando fora. De 1024px para cima nada muda.
+- **Teclado no modo palco.** → / PageDown próxima música, ← / PageUp anterior, Esc sai —
+  é o que um pedal Bluetooth de virar página manda.
+- **Mudar a resposta da escala.** Depois de confirmar aparece "Não vou mais poder"; depois
+  de recusar, "Consigo ir, sim". A API já aceitava a troca.

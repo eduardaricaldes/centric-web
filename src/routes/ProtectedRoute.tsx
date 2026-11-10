@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Button } from "../components/Button";
 import { ErrorState, ForbiddenState } from "../components/ErrorState";
 import { Sidebar } from "../components/Sidebar";
+import { IconFlame, IconMenu } from "../components/icons";
 import { useAuth } from "../features/auth/AuthContext";
 import { canAdminister } from "../lib/permissions";
 import { getToken, setStoredRedirect } from "../lib/storage";
@@ -63,12 +65,51 @@ export function RequireAdministration() {
   return <Outlet />;
 }
 
-/** Layout padrão: menu lateral fixo + conteúdo. Fica dentro de RequireAuth. */
+/**
+ * Layout padrão: menu lateral fixo + conteúdo, a partir de 1024px. Abaixo disso (celular,
+ * tablet em pé) o menu vira gaveta aberta por um botão na barra do topo.
+ */
 export function AppLayout() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
+
   return (
-    <div className="flex h-screen bg-ivory">
-      <Sidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
+    <div className="flex h-screen flex-col bg-ivory lg:flex-row">
+      <header className="flex shrink-0 items-center gap-3 border-b border-line bg-surface px-4 py-3 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          aria-label="Abrir menu"
+          aria-expanded={menuOpen}
+          aria-controls="menu-principal"
+          className="flex h-10 w-10 items-center justify-center rounded-field text-ink hover:bg-ivory"
+        >
+          <IconMenu width={22} height={22} />
+        </button>
+        <div className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-north text-white">
+          <IconFlame width={18} height={18} />
+        </div>
+        <span className="font-display text-base font-semibold text-ink">Centric</span>
+      </header>
+
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-ink/30 lg:hidden"
+          onClick={() => setMenuOpen(false)}
+          aria-hidden
+        />
+      )}
+      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <Outlet />
       </main>
     </div>
