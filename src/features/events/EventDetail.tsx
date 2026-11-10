@@ -48,7 +48,7 @@ import { getErrorMessage, isForbidden, isNotFound } from "../../lib/errors";
 import { isEventCollaborator, isEventOwner } from "../../lib/permissions";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { listItemHasChords } from "../../api/songs";
-import { EVENT_TYPE_LABEL } from "./eventLabels";
+import { EVENT_TYPE_LABEL, warningLabel } from "./eventLabels";
 import { PreachingTab } from "./PreachingTab";
 import { RosterTab } from "./RosterTab";
 
@@ -482,7 +482,7 @@ export function EventDetail() {
               className="flex items-center gap-2 rounded-field border border-amber/30 bg-amber/10 px-3 py-2 text-sm text-amber-ink"
             >
               <IconAlertTriangle width={16} height={16} />
-              {warning.message}
+              {warningLabel(warning, event)}
             </div>
           ))}
         </div>
