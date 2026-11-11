@@ -12,6 +12,7 @@ import { EventList } from "../features/events/EventList";
 import { Home } from "../features/home/Home";
 import { Profile } from "../features/profile/Profile";
 import { ProgramPage } from "../features/program/ProgramPage";
+import { PublicSharePage } from "../features/share/PublicSharePage";
 import { SongDetailRoute } from "../features/songs/SongDetail";
 import { SongFormPage } from "../features/songs/SongForm";
 import { SongList } from "../features/songs/SongList";
@@ -26,6 +27,8 @@ export const router = createBrowserRouter([
       { path: "/login", element: <Login /> },
       { path: "/register", element: <Register /> },
       { path: "/reset-password", element: <ResetPassword /> },
+      // Link público de letra: fora do login, para quem não tem conta.
+      { path: "/s/:token", element: <PublicSharePage /> },
       {
         element: <RequireAuth />,
         children: [

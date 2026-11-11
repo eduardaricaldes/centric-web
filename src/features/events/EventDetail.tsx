@@ -44,12 +44,13 @@ import {
   IconTrash,
 } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
+import { ShareButton } from "../share/ShareButton";
 import { formatDateTime } from "../../lib/dates";
 import { getErrorMessage, isForbidden, isNotFound } from "../../lib/errors";
 import { isEventCollaborator, isEventOwner } from "../../lib/permissions";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { listItemHasChords } from "../../api/songs";
-import { EVENT_TYPE_LABEL } from "./eventLabels";
+import { EVENT_TYPE_LABEL, warningLabel } from "./eventLabels";
 import { PreachingTab } from "./PreachingTab";
 import { RosterTab } from "./RosterTab";
 
@@ -482,7 +483,13 @@ export function EventDetail() {
             {formatDateTime(event.date, event.time)} — {EVENT_TYPE_LABEL[event.type]}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {isEventCollaborator(user) && (
+            <ShareButton
+              target={{ eventId: event.id }}
+              subject="as letras do repertório deste evento, na ordem"
+            />
+          )}
           {isEventOwner(user, event) && (
             <Link to={`/events/${event.id}/edit`}>
               <Button variant="secondary" icon={<IconEdit width={16} height={16} />}>
@@ -507,7 +514,7 @@ export function EventDetail() {
               className="flex items-center gap-2 rounded-field border border-amber/30 bg-amber/10 px-3 py-2 text-sm text-amber-ink"
             >
               <IconAlertTriangle width={16} height={16} />
-              {warning.message}
+              {warningLabel(warning, event)}
             </div>
           ))}
         </div>
