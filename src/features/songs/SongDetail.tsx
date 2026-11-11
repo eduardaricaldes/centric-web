@@ -12,7 +12,7 @@ import { useAuth } from "../auth/AuthContext";
 import { formatTimestamp } from "../../lib/dates";
 import { isForbidden, isNotFound } from "../../lib/errors";
 import { canManageSongs } from "../../lib/permissions";
-import { parseChordProLines, transposeChordPro, transposeTone } from "../../lib/chordpro";
+import { parseChordProLines, toLyricLines, transposeChordPro, transposeTone } from "../../lib/chordpro";
 
 type SongView = "lyrics" | "chords";
 
@@ -66,10 +66,10 @@ export function SongDetail() {
 
   const canManage = canManageSongs(user);
   const showChords = view === "chords" && hasRealChords(song);
-  const body = showChords
-    ? transposeChordPro(chordproOrFallback(song), semitones)
-    : song.lyrics;
-  const lines = showChords ? parseChordProLines(body) : null;
+  const lines = showChords
+    ? parseChordProLines(transposeChordPro(chordproOrFallback(song), semitones))
+    : null;
+  const lyricLines = showChords ? [] : toLyricLines(chordproOrFallback(song));
 
   const toneLabel =
     song.tone && semitones !== 0
@@ -149,7 +149,7 @@ export function SongDetail() {
             −
           </Button>
           <span className="w-28 text-center text-sm text-muted">
-            {semitones === 0 ? "Tom original" : `${semitones > 0 ? "+" : ""}${semitones} semitons`}
+            {semitones === 0 ? "Tom original" : `${semitones > 0 ? "+" : ""}${semitones} ${Math.abs(semitones) === 1 ? "semitom" : "semitons"}`}
           </span>
           <Button
             variant="secondary"
@@ -166,18 +166,32 @@ export function SongDetail() {
       <div className="rounded-card border border-line bg-surface p-6">
         {showChords && lines ? (
           <pre className="whitespace-pre-wrap break-words font-mono text-sm leading-relaxed text-ink">
-            {lines.map((line, index) => (
-              <div key={index} className="mb-1">
-                {line.chordRow && (
-                  <div className="text-amber-ink">{line.chordRow || " "}</div>
-                )}
-                <div>{line.lyricRow || " "}</div>
-              </div>
-            ))}
+            {lines.map((line, index) =>
+              line.section ? (
+                <div key={index} className="mb-1 mt-3 font-sans text-xs font-semibold uppercase tracking-wide text-muted">
+                  {line.section}
+                </div>
+              ) : (
+                <div key={index} className="mb-1">
+                  {line.chordRow && (
+                    <div className="text-amber-ink">{line.chordRow || " "}</div>
+                  )}
+                  <div>{line.lyricRow || " "}</div>
+                </div>
+              ),
+            )}
           </pre>
         ) : (
           <div className="whitespace-pre-wrap font-display text-lg leading-relaxed text-ink">
-            {song.lyrics}
+            {lyricLines.map((line, index) =>
+              line.section ? (
+                <p key={index} className="mt-3 font-sans text-xs font-semibold uppercase tracking-wide text-muted">
+                  {line.text}
+                </p>
+              ) : (
+                <p key={index}>{line.text || " "}</p>
+              ),
+            )}
           </div>
         )}
       </div>

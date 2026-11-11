@@ -6,7 +6,7 @@ import type { PlaylistSong } from "../../api/types";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { IconChevronLeft, IconChevronRight, IconX } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
-import { parseChordProLines, toPlainLyrics, transposeChordPro, transposeTone } from "../../lib/chordpro";
+import { parseChordProLines, toLyricLines, transposeChordPro, transposeTone } from "../../lib/chordpro";
 import { isForbidden, isNotFound } from "../../lib/errors";
 import { getStageFontSize, setStageFontSize } from "../../lib/storage";
 
@@ -146,6 +146,10 @@ function toneLabel(semitones: number): string {
   return `${sign}${abs} semitom${abs > 1 ? "s" : ""}`;
 }
 
+/** Rótulo de parte ("Verso 1", "Refrão"): menor que a letra, e nunca no fim de uma coluna. */
+const SECTION_CLASSES =
+  "mb-[0.15em] mt-[0.4em] break-after-avoid break-inside-avoid font-sans text-[0.6em] font-semibold uppercase tracking-wide text-white/50";
+
 function StageSongBody({
   item,
   view,
@@ -157,7 +161,7 @@ function StageSongBody({
 }) {
   const [semitones, setSemitones] = useState(0);
   const rawChordpro = item.song.chordpro ?? "";
-  const plainLyrics = toPlainLyrics(rawChordpro);
+  const lyricLines = toLyricLines(rawChordpro);
   const tone = item.song.tone ? transposeTone(item.song.tone, semitones) : null;
 
   const lines =
@@ -206,23 +210,35 @@ function StageSongBody({
 
       <div ref={lyricsRef} className="min-h-0 flex-1 overflow-auto" style={{ columnGap: "3rem" }}>
         {view === "chords" && lines
-          ? lines.map((line, index) => (
-              <div
-                key={index}
-                className="mb-[0.3em] break-inside-avoid whitespace-pre font-mono leading-tight"
-              >
-                {line.chordRow && <div className="text-amber">{line.chordRow}</div>}
-                <div className="text-white">{line.lyricRow || " "}</div>
-              </div>
-            ))
-          : plainLyrics.split("\n").map((line, index) => (
-              <p
-                key={index}
-                className="mb-[0.3em] break-inside-avoid whitespace-pre-wrap font-display leading-snug text-white"
-              >
-                {line || " "}
-              </p>
-            ))}
+          ? lines.map((line, index) =>
+              line.section ? (
+                <p key={index} className={SECTION_CLASSES}>
+                  {line.section}
+                </p>
+              ) : (
+                <div
+                  key={index}
+                  className="mb-[0.3em] break-inside-avoid whitespace-pre font-mono leading-tight"
+                >
+                  {line.chordRow && <div className="text-amber">{line.chordRow}</div>}
+                  <div className="text-white">{line.lyricRow || " "}</div>
+                </div>
+              ),
+            )
+          : lyricLines.map((line, index) =>
+              line.section ? (
+                <p key={index} className={SECTION_CLASSES}>
+                  {line.text}
+                </p>
+              ) : (
+                <p
+                  key={index}
+                  className="mb-[0.3em] break-inside-avoid whitespace-pre-wrap font-display leading-snug text-white"
+                >
+                  {line.text || " "}
+                </p>
+              ),
+            )}
       </div>
     </div>
   );
@@ -256,6 +272,29 @@ export function Stage() {
   };
 
   const exit = () => navigate(`/events/${eventId}`);
+
+  // Teclado e pedal de virar página (que manda setas ou PageUp/PageDown): troca de música.
+  const songCount = event?.playlist?.songs?.length ?? 0;
+  useEffect(() => {
+    const onKeyDown = (keyEvent: KeyboardEvent) => {
+      if (keyEvent.altKey || keyEvent.ctrlKey || keyEvent.metaKey) return;
+      const target = keyEvent.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+      if (keyEvent.key === "ArrowRight" || keyEvent.key === "PageDown") {
+        keyEvent.preventDefault();
+        setCurrentIndex((value) => Math.min(value + 1, Math.max(songCount - 1, 0)));
+      } else if (keyEvent.key === "ArrowLeft" || keyEvent.key === "PageUp") {
+        keyEvent.preventDefault();
+        setCurrentIndex((value) => Math.max(value - 1, 0));
+      } else if (keyEvent.key === "Escape") {
+        navigate(`/events/${eventId}`);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [songCount, navigate, eventId]);
 
   if (isLoading) {
     return (
@@ -396,6 +435,7 @@ export function Stage() {
           type="button"
           disabled={isFirst}
           onClick={() => setCurrentIndex((value) => value - 1)}
+          title="Música anterior (← ou PageUp)"
           className="flex h-10 items-center gap-1 rounded-field border border-white/20 px-3 text-sm text-white hover:bg-white/10 disabled:opacity-30"
         >
           <IconChevronLeft width={16} height={16} />
@@ -424,6 +464,7 @@ export function Stage() {
           type="button"
           disabled={isLast}
           onClick={() => setCurrentIndex((value) => value + 1)}
+          title="Próxima música (→ ou PageDown)"
           className="flex h-10 items-center gap-1 rounded-field border border-white/20 px-3 text-sm text-white hover:bg-white/10 disabled:opacity-30"
         >
           Próxima

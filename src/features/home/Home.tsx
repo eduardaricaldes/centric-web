@@ -198,6 +198,23 @@ function MyAssignmentsCard() {
                   </Button>
                 </div>
               )}
+              {assignment.status !== "CONVIDADO" && (
+                <div className="mt-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    loading={respondMutation.isPending && respondMutation.variables?.id === assignment.id}
+                    onClick={() =>
+                      respondMutation.mutate({
+                        id: assignment.id,
+                        status: assignment.status === "CONFIRMADO" ? "RECUSADO" : "CONFIRMADO",
+                      })
+                    }
+                  >
+                    {assignment.status === "CONFIRMADO" ? "Não vou mais poder" : "Consigo ir, sim"}
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
           {respondMutation.isError && (
