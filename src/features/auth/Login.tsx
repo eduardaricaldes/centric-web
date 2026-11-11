@@ -73,16 +73,30 @@ export function Login() {
             error={errors.password?.message}
             {...register("password")}
           />
+          <Link
+            to="/reset-password"
+            className="-mt-2 self-end text-sm font-medium text-north hover:text-north-deep"
+          >
+            Esqueci minha senha
+          </Link>
 
           {submitError !== null && (
             <div className="flex flex-col gap-2 rounded-field border border-red/20 bg-red-tint px-3 py-2.5 text-sm text-red">
               <span>{getErrorMessage(submitError)}</span>
-              <button
-                type="submit"
-                className="self-start text-sm font-medium underline underline-offset-2"
-              >
-                Tentar de novo
-              </button>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <button
+                  type="submit"
+                  className="text-sm font-medium underline underline-offset-2"
+                >
+                  Tentar de novo
+                </button>
+                <Link
+                  to="/reset-password"
+                  className="text-sm font-medium underline underline-offset-2"
+                >
+                  Redefinir senha
+                </Link>
+              </div>
             </div>
           )}
 
