@@ -19,10 +19,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getEvent } from "../../api/events";
+import { deleteEvent, getEvent } from "../../api/events";
 import {
   addSongToPlaylist,
   createPlaylist,
+  deletePlaylist,
   removeSongFromPlaylist,
   reorderPlaylistSongs,
 } from "../../api/playlists";
@@ -30,6 +31,7 @@ import { listSongs } from "../../api/songs";
 import type { EventDetail as EventDetailType, PlaylistSong } from "../../api/types";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
+import { ConfirmDialog } from "../../components/Dialog";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { Input } from "../../components/Input";
@@ -209,6 +211,7 @@ function AddSongPanel({ playlistId, alreadyAddedIds }: { playlistId: number; alr
                     variant="secondary"
                     loading={addMutation.isPending && addMutation.variables === song.id}
                     onClick={() => addMutation.mutate(song.id)}
+                    aria-label={`Adicionar ${song.title} ao repertório`}
                   >
                     Adicionar
                   </Button>
@@ -437,6 +440,22 @@ export function EventDetail() {
     enabled: Number.isFinite(eventId),
   });
 
+  const queryClient = useQueryClient();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const deleteMutation = useMutation({
+    mutationFn: async (playlistId: number | null) => {
+      // A API não apaga o repertório junto com o evento: ele ficaria solto e
+      // travaria a exclusão das músicas que estão nele.
+      if (playlistId !== null) await deletePlaylist(playlistId);
+      await deleteEvent(eventId);
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      navigate("/events", { replace: true });
+    },
+  });
+
   if (isLoading) {
     return (
       <div>
@@ -491,11 +510,20 @@ export function EventDetail() {
             />
           )}
           {isEventOwner(user, event) && (
-            <Link to={`/events/${event.id}/edit`}>
-              <Button variant="secondary" icon={<IconEdit width={16} height={16} />}>
-                Editar
+            <>
+              <Link to={`/events/${event.id}/edit`}>
+                <Button variant="secondary" icon={<IconEdit width={16} height={16} />}>
+                  Editar
+                </Button>
+              </Link>
+              <Button
+                variant="secondary"
+                icon={<IconTrash width={16} height={16} />}
+                onClick={() => setConfirmingDelete(true)}
+              >
+                Excluir
               </Button>
-            </Link>
+            </>
           )}
           <Link to={`/events/${event.id}/program`}>
             <Button variant="secondary">
@@ -505,6 +533,27 @@ export function EventDetail() {
           <Button onClick={() => navigate(`/events/${event.id}/stage`)}>Modo palco</Button>
         </div>
       </div>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Excluir evento"
+          description={
+            <>
+              <strong className="text-ink">{event.title}</strong> sai da agenda junto com o
+              repertório, a escala e a pregação. As músicas continuam no catálogo.
+            </>
+          }
+          confirmLabel="Excluir evento"
+          danger
+          loading={deleteMutation.isPending}
+          error={deleteMutation.error}
+          onCancel={() => {
+            setConfirmingDelete(false);
+            deleteMutation.reset();
+          }}
+          onConfirm={() => deleteMutation.mutate(event.playlist?.id ?? null)}
+        />
+      )}
 
       {event.warnings.length > 0 && (
         <div className="mb-5 flex flex-col gap-2">

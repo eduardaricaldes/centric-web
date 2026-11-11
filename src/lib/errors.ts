@@ -69,6 +69,10 @@ const KNOWN_DETAILS: Record<string, string> = {
     "Você só pode compartilhar eventos dos ministérios que lidera.",
   "Share link not found": "Este link já foi revogado.",
   "Link not found": "Este link não está mais disponível.",
+
+  // Exclusões
+  "Song is in a playlist":
+    "Esta música está no repertório de algum evento. Tire de lá antes de excluir.",
 };
 
 const STATUS_FALLBACK: Record<number, string> = {

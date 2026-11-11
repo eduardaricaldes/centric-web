@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { forwardRef, useId, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 interface FieldWrapperProps {
   label?: string;
@@ -42,11 +42,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, error, hint, className, id, ...rest },
   ref,
 ) {
+  // Sem id próprio, gera um: clicar no rótulo foca o campo e o leitor de tela lê o nome.
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
   return (
-    <FieldChrome label={label} error={error} hint={hint} htmlFor={id} className={className}>
+    <FieldChrome label={label} error={error} hint={hint} htmlFor={fieldId} className={className}>
       <input
         ref={ref}
-        id={id}
+        id={fieldId}
         className={`${fieldBaseClasses} ${error ? "border-red" : "border-line"}`}
         {...rest}
       />
@@ -62,11 +65,13 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   { label, error, hint, className, id, mono = false, ...rest },
   ref,
 ) {
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
   return (
-    <FieldChrome label={label} error={error} hint={hint} htmlFor={id} className={className}>
+    <FieldChrome label={label} error={error} hint={hint} htmlFor={fieldId} className={className}>
       <textarea
         ref={ref}
-        id={id}
+        id={fieldId}
         className={`w-full rounded-field border bg-surface px-3 py-2.5 text-sm text-ink
           placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-north/40
           disabled:opacity-50 ${mono ? "font-mono" : ""} ${error ? "border-red" : "border-line"}`}

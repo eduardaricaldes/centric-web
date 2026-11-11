@@ -1,13 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { chordproOrFallback, getSong, hasRealChords } from "../../api/songs";
+import { chordproOrFallback, deleteSong, getSong, hasRealChords } from "../../api/songs";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
+import { ConfirmDialog } from "../../components/Dialog";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { SkeletonLines } from "../../components/Skeleton";
-import { IconChevronLeft, IconEdit, IconMusic } from "../../components/icons";
+import { IconChevronLeft, IconEdit, IconMusic, IconTrash } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
 import { ShareButton } from "../share/ShareButton";
 import { formatTimestamp } from "../../lib/dates";
@@ -33,6 +34,17 @@ export function SongDetail() {
 
   const [view, setView] = useState<SongView>(user?.prefers_chords ? "chords" : "lyrics");
   const [semitones, setSemitones] = useState(0);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteSong(songId),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["song", songId] });
+      queryClient.invalidateQueries({ queryKey: ["songs"] });
+      navigate("/songs", { replace: true });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -115,9 +127,37 @@ export function SongDetail() {
                 Editar
               </Button>
             </Link>
+            <Button
+              variant="secondary"
+              icon={<IconTrash width={16} height={16} />}
+              onClick={() => setConfirmingDelete(true)}
+            >
+              Excluir
+            </Button>
           </div>
         )}
       </div>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Excluir música"
+          description={
+            <>
+              <strong className="text-ink">{song.title}</strong> sai do catálogo de vez. Se ela
+              estiver no repertório de algum evento, tire de lá antes.
+            </>
+          }
+          confirmLabel="Excluir música"
+          danger
+          loading={deleteMutation.isPending}
+          error={deleteMutation.error}
+          onCancel={() => {
+            setConfirmingDelete(false);
+            deleteMutation.reset();
+          }}
+          onConfirm={() => deleteMutation.mutate()}
+        />
+      )}
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-3">
         <div className="flex rounded-field border border-line p-1">
