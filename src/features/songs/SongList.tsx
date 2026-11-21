@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { listItemHasChords, listSongs } from "../../api/songs";
+import { listItemHasChords, listSongCategories, listSongs } from "../../api/songs";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { Input } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
+import { Select } from "../../components/Select";
 import { SkeletonTable } from "../../components/Skeleton";
 import { IconChevronLeft, IconChevronRight, IconEdit, IconMusic, IconPlus } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
@@ -26,6 +27,7 @@ export function SongList() {
 
   const search = searchParams.get("search") ?? "";
   const artist = searchParams.get("artist") ?? "";
+  const category = searchParams.get("category") ?? "";
   const page = Number(searchParams.get("page") ?? "1");
 
   const [searchInput, setSearchInput] = useState(search);
@@ -46,9 +48,32 @@ export function SongList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só reagimos ao valor com debounce
   }, [debouncedSearch, debouncedArtist]);
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["song-categories"],
+    queryFn: listSongCategories,
+    staleTime: Infinity,
+  });
+
+  const changeCategory = (value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set("category", value);
+      else next.delete("category");
+      next.delete("page");
+      return next;
+    });
+  };
+
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["songs", { search, artist, page }],
-    queryFn: () => listSongs({ search: search || undefined, artist: artist || undefined, page, limit: LIMIT }),
+    queryKey: ["songs", { search, artist, category, page }],
+    queryFn: () =>
+      listSongs({
+        search: search || undefined,
+        artist: artist || undefined,
+        category: category || undefined,
+        page,
+        limit: LIMIT,
+      }),
     placeholderData: (previous) => previous,
   });
 
@@ -91,6 +116,19 @@ export function SongList() {
           className="w-full max-w-xs"
           aria-label="Buscar por artista"
         />
+        <Select
+          value={category}
+          onChange={(event) => changeCategory(event.target.value)}
+          className="w-full max-w-[12rem]"
+          aria-label="Filtrar por categoria"
+        >
+          <option value="">Todas as categorias</option>
+          {categories.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </Select>
       </div>
 
       {isLoading ? (
@@ -106,8 +144,8 @@ export function SongList() {
           icon={<IconMusic width={32} height={32} />}
           title="Nenhuma música encontrada"
           description={
-            search || artist
-              ? "Tente outro termo de busca."
+            search || artist || category
+              ? "Tente outro termo de busca ou outra categoria."
               : "Cadastre a primeira música do repertório."
           }
         />

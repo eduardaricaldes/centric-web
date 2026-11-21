@@ -11,6 +11,7 @@ import type {
 export interface ListSongsParams extends PageParams {
   search?: string;
   artist?: string;
+  category?: string;
 }
 
 /**
@@ -67,4 +68,9 @@ export function updateSong(id: number, payload: SongUpdatePayload): Promise<Song
 
 export function deleteSong(id: number): Promise<void> {
   return apiRequest<void>(`/songs/${id}`, { method: "DELETE" });
+}
+
+/** Lista fechada de categorias (definida na API, `app/models/song_categories.py`). */
+export function listSongCategories(): Promise<string[]> {
+  return apiRequest<string[]>("/songs/categories");
 }

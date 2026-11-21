@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
-import { createSong, getSong, updateSong } from "../../api/songs";
+import { createSong, getSong, listSongCategories, updateSong } from "../../api/songs";
 import { Button } from "../../components/Button";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { Input, Textarea } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
+import { Select } from "../../components/Select";
 import { SkeletonLines } from "../../components/Skeleton";
 import { useAuth } from "../auth/AuthContext";
 import { normalizeChordPro, parseChordProLines, toLyricLines, toPlainLyrics } from "../../lib/chordpro";
@@ -107,6 +108,15 @@ export function SongFormPage() {
     enabled: isEditing && Number.isFinite(songId),
   });
 
+  // O select precisa das opções antes de receber o valor da música, senão aparece vazio.
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["song-categories"],
+    queryFn: listSongCategories,
+    staleTime: Infinity,
+  });
+  // Categoria antiga (texto livre de antes da lista) aparece até alguém trocar.
+  const legacyCategory = song?.category && !categories.includes(song.category) ? song.category : null;
+
   const {
     register,
     handleSubmit,
@@ -173,7 +183,7 @@ export function SongFormPage() {
     return <ForbiddenState message="Só administradores podem cadastrar ou editar músicas." />;
   }
 
-  if (isEditing && isLoading) {
+  if ((isEditing && isLoading) || categoriesLoading) {
     return (
       <div className="max-w-4xl">
         <SkeletonLines count={10} />
@@ -213,7 +223,15 @@ export function SongFormPage() {
             <Input label="Tom original" className="w-32" placeholder="Ex.: G" {...register("tone")} />
           </div>
           <div className="flex gap-4">
-            <Input label="Categoria" className="flex-1" placeholder="Ex.: Adoração" {...register("category")} />
+            <Select label="Categoria" className="flex-1" {...register("category")}>
+              <option value="">Sem categoria</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+              {legacyCategory && <option value={legacyCategory}>{legacyCategory} (antiga)</option>}
+            </Select>
             <Input
               label="Duração (min)"
               className="w-32"
