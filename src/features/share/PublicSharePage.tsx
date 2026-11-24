@@ -5,7 +5,7 @@ import { getPublicShare, publicShareSongs, publicSongHasChords, type PublicSong 
 import { SkeletonLines } from "../../components/Skeleton";
 import { formatDateLong } from "../../lib/dates";
 import { getErrorMessage, isNotFound } from "../../lib/errors";
-import { parseChordProLines } from "../../lib/chordpro";
+import { parseChordProLines, toLyricLines } from "../../lib/chordpro";
 
 type SongView = "lyrics" | "chords";
 
@@ -60,8 +60,19 @@ function SongSheet({ song, view, index }: { song: PublicSong; view: SongView; in
           ))}
         </pre>
       ) : (
-        <div className="whitespace-pre-wrap font-display text-lg leading-relaxed text-ink">
-          {song.lyrics}
+        // Rótulos de parte ({comment: Refrão}) viram título pequeno, não texto da letra.
+        <div className="font-display text-lg leading-relaxed text-ink">
+          {toLyricLines(song.chordpro ?? song.lyrics).map((line, lineIndex) =>
+            line.section ? (
+              <p key={lineIndex} className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted">
+                {line.text}
+              </p>
+            ) : (
+              <p key={lineIndex} className="min-h-[1.5em] break-words">
+                {line.text}
+              </p>
+            ),
+          )}
         </div>
       )}
     </article>

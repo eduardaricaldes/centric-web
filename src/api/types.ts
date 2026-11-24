@@ -504,6 +504,8 @@ export interface ShareLink {
   song_id: number | null;
   event_id: number | null;
   created_at: string;
+  /** Só links de evento: último dia em que o link abre (alguns dias depois do culto). */
+  expires_on?: string | null;
 }
 
 export interface ShareLinkListResponse {

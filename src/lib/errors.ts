@@ -69,6 +69,7 @@ const KNOWN_DETAILS: Record<string, string> = {
     "Você só pode compartilhar eventos dos ministérios que lidera.",
   "Share link not found": "Este link já foi revogado.",
   "Link not found": "Este link não está mais disponível.",
+  "Link expired": "Este link expirou. Peça um link novo para quem organizou o culto.",
 
   // Exclusões
   "Song is in a playlist":
