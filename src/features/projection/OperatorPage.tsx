@@ -2,12 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getEventForStage } from "../../api/events";
+import { updateLive, type LiveUpdatePayload } from "../../api/live";
 import { Button } from "../../components/Button";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { SkeletonLines } from "../../components/Skeleton";
 import { IconChevronLeft, IconMonitor } from "../../components/icons";
 import { isForbidden } from "../../lib/errors";
 import { songSlides, type Slide } from "../../lib/slides";
+import { ShareButton } from "../share/ShareButton";
 import { createOperatorChannel, type ScreenState } from "./channel";
 import { ScreenContent } from "./Screen";
 
@@ -94,6 +96,31 @@ export function OperatorPage() {
     channelRef.current?.send(state);
   }, [liveKey]);
 
+  // Fase 4: também avisa os celulares (link público). Se a internet cair, o telão
+  // segue pelo navegador; os celulares só ficam no último slide.
+  const [phoneSync, setPhoneSync] = useState<"idle" | "ok" | "offline">("idle");
+  const phonePayload: LiveUpdatePayload =
+    live.mode === "slide" && position
+      ? {
+          mode: "slide",
+          song_index: position.song,
+          slide_index: position.slide,
+          song_title: live.songTitle ?? null,
+          lines: live.lines,
+        }
+      : { mode: live.mode };
+  const phoneKey = JSON.stringify(phonePayload);
+  useEffect(() => {
+    if (!Number.isFinite(eventId)) return;
+    let cancelled = false;
+    updateLive(eventId, JSON.parse(phoneKey) as LiveUpdatePayload)
+      .then(() => !cancelled && setPhoneSync("ok"))
+      .catch(() => !cancelled && setPhoneSync("offline"));
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId, phoneKey]);
+
   const show = useCallback((target: Position) => {
     setOverlay(null);
     setPosition(target);
@@ -161,10 +188,19 @@ export function OperatorPage() {
           </Link>
           <div>
             <h1 className="font-display text-lg font-semibold text-ink">{event.title}</h1>
-            <p className="text-xs text-muted">Setas: avançar e voltar · B: tela preta · L: logo</p>
+            <p className="text-xs text-muted">
+              Setas: avançar e voltar · B: tela preta · L: logo
+              {phoneSync !== "idle" && (
+                <span className={phoneSync === "ok" ? "text-green" : "text-amber"}>
+                  {" · "}
+                  {phoneSync === "ok" ? "celulares acompanhando" : "celulares sem sinal (telão segue normal)"}
+                </span>
+              )}
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ShareButton target={{ eventId: event.id }} subject="as letras do repertório deste evento" />
           <Button variant={overlay === "black" ? "primary" : "secondary"} size="sm" onClick={() => setOverlay(overlay === "black" ? null : "black")}>
             Tela preta (B)
           </Button>

@@ -1,6 +1,6 @@
 import { clearToken, getToken, setStoredRedirect } from "../lib/storage";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 /** Rotas que não exigem (e não devem mandar) o header Authorization. */
 const PUBLIC_PATHS = ["/auth/login", "/auth/register", "/health/db"];
