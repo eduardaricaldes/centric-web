@@ -2,9 +2,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { useBlocker, useNavigate, useParams } from "react-router-dom";
+import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
-import { createSong, getSong, listSongCategories, updateSong } from "../../api/songs";
+import {
+  createSong,
+  findSongsWithSameTitle,
+  getSong,
+  listSongCategories,
+  updateSong,
+  type SongImportDraft,
+} from "../../api/songs";
+import type { SongListItem } from "../../api/types";
 import { Button } from "../../components/Button";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { Input, Textarea } from "../../components/Input";
@@ -92,6 +100,11 @@ export function SongFormPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const location = useLocation();
+  const importState = (location.state ?? null) as { importDraft?: SongImportDraft; importFileName?: string } | null;
+  const importDraft = !isEditing ? importState?.importDraft : undefined;
+  // Músicas com o mesmo título: aparece o aviso e o próximo "Salvar" cria mesmo assim.
+  const [sameTitle, setSameTitle] = useState<SongListItem[] | null>(null);
   const [submitError, setSubmitError] = useState<unknown>(null);
   // Destino depois de salvar: o bloqueio de saída precisa desligar antes de navegar.
   const [savedPath, setSavedPath] = useState<string | null>(null);
@@ -125,6 +138,16 @@ export function SongFormPage() {
     formState: { errors, isSubmitting, isDirty },
   } = useForm<SongFormValues>({
     resolver: zodResolver(songSchema),
+    defaultValues: importDraft
+      ? {
+          title: importDraft.title,
+          artist: importDraft.artist ?? "",
+          tone: importDraft.tone ?? "",
+          category: "",
+          duration_min: "",
+          chordpro: normalizeChordPro(importDraft.chordpro),
+        }
+      : undefined,
     values: song
       ? {
           title: song.title,
@@ -138,6 +161,7 @@ export function SongFormPage() {
   });
 
   const chordproValue = useWatch({ control, name: "chordpro" }) ?? "";
+
   const blocker = useBlocker(isDirty && !saved);
 
   useEffect(() => {
@@ -170,6 +194,13 @@ export function SongFormPage() {
         await queryClient.invalidateQueries({ queryKey: ["songs"] });
         setSavedPath(`/songs/${songId}`);
       } else {
+        if (sameTitle === null) {
+          const existing = await findSongsWithSameTitle(payload.title);
+          if (existing.length > 0) {
+            setSameTitle(existing);
+            return;
+          }
+        }
         const created = await createSong(payload);
         await queryClient.invalidateQueries({ queryKey: ["songs"] });
         setSavedPath(`/songs/${created.id}`);
@@ -215,9 +246,20 @@ export function SongFormPage() {
         </div>
       )}
 
+      {importDraft && (
+        <div className="mb-4 rounded-field border border-north/20 bg-north/5 px-4 py-3 text-sm text-ink">
+          Preenchido a partir de <strong>{importState?.importFileName ?? "arquivo"}</strong>
+          {importDraft.used_ai ? " pela leitura automática" : ""}. Confira título, tom e letra antes de salvar.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 xl:grid-cols-2">
         <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6">
-          <Input label="Título" error={errors.title?.message} {...register("title")} />
+          <Input
+            label="Título"
+            error={errors.title?.message}
+            {...register("title", { onChange: () => setSameTitle(null) })}
+          />
           <div className="flex gap-4">
             <Input label="Artista" className="flex-1" {...register("artist")} />
             <Input label="Tom original" className="w-32" placeholder="Ex.: G" {...register("tone")} />
@@ -260,6 +302,23 @@ export function SongFormPage() {
               });
             }}
           />
+
+          {sameTitle && sameTitle.length > 0 && (
+            <div className="rounded-field border border-amber/30 bg-amber/10 px-3 py-2.5 text-sm text-amber-ink">
+              <p className="font-medium">Essa música já existe no catálogo:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {sameTitle.map((item) => (
+                  <li key={item.id}>
+                    <Link to={`/songs/${item.id}`} className="underline" target="_blank">
+                      {item.title}
+                    </Link>
+                    {item.artist ? ` (${item.artist})` : ""}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1">Se for outra versão, clique em Salvar de novo para criar mesmo assim.</p>
+            </div>
+          )}
 
           {submitError !== null && (
             <div className="rounded-field border border-red/20 bg-red-tint px-3 py-2.5 text-sm text-red">

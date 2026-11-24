@@ -36,6 +36,8 @@ interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined | null>;
   json?: unknown;
   form?: Record<string, string>;
+  /** Upload de arquivo (multipart); o navegador monta o Content-Type. */
+  formData?: FormData;
   signal?: AbortSignal;
 }
 
@@ -64,7 +66,7 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", query, json, form, signal } = options;
+  const { method = "GET", query, json, form, formData, signal } = options;
   const headers: Record<string, string> = {};
   const isPublic = isPublicApiPath(path);
 
@@ -76,7 +78,9 @@ export async function apiRequest<T>(
   }
 
   let body: BodyInit | undefined;
-  if (form) {
+  if (formData) {
+    body = formData;
+  } else if (form) {
     headers["Content-Type"] = "application/x-www-form-urlencoded";
     body = new URLSearchParams(form).toString();
   } else if (json !== undefined) {

@@ -13,7 +13,7 @@ import { useAuth } from "../auth/AuthContext";
 import { ShareButton } from "../share/ShareButton";
 import { formatTimestamp } from "../../lib/dates";
 import { isForbidden, isNotFound } from "../../lib/errors";
-import { canManageSongs } from "../../lib/permissions";
+import { canDeleteSongs, canManageSongs } from "../../lib/permissions";
 import { parseChordProLines, toLyricLines, transposeChordPro, transposeTone } from "../../lib/chordpro";
 
 type SongView = "lyrics" | "chords";
@@ -78,6 +78,7 @@ export function SongDetail() {
   if (!song) return null;
 
   const canManage = canManageSongs(user);
+  const canDelete = canDeleteSongs(user);
   const showChords = view === "chords" && hasRealChords(song);
   const lines = showChords
     ? parseChordProLines(transposeChordPro(chordproOrFallback(song), semitones))
@@ -121,19 +122,21 @@ export function SongDetail() {
         </div>
         {canManage && (
           <div className="flex flex-wrap gap-2">
-            <ShareButton target={{ songId: song.id }} subject="a letra desta música" />
+            {canDelete && <ShareButton target={{ songId: song.id }} subject="a letra desta música" />}
             <Link to={`/songs/${song.id}/edit`}>
               <Button variant="secondary" icon={<IconEdit width={16} height={16} />}>
                 Editar
               </Button>
             </Link>
-            <Button
-              variant="secondary"
-              icon={<IconTrash width={16} height={16} />}
-              onClick={() => setConfirmingDelete(true)}
-            >
-              Excluir
-            </Button>
+            {canDelete && (
+              <Button
+                variant="secondary"
+                icon={<IconTrash width={16} height={16} />}
+                onClick={() => setConfirmingDelete(true)}
+              >
+                Excluir
+              </Button>
+            )}
           </div>
         )}
       </div>

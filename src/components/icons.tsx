@@ -245,3 +245,34 @@ export function IconMenu(props: SVGProps<SVGSVGElement>) {
     </Icon>
   );
 }
+
+export function IconUpload(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M12 15V4" />
+      <path d="m7 9 5-5 5 5" />
+      <path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+    </Icon>
+  );
+}
+
+export function IconMonitor(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8" />
+      <path d="M12 16v4" />
+    </Icon>
+  );
+}
+
+export function IconQr(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2" />
+    </Icon>
+  );
+}
