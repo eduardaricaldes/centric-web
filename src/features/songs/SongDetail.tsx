@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { chordproOrFallback, deleteSong, getSong, hasRealChords } from "../../api/songs";
+import { chordproOrFallback, deleteSong, findSongsWithSameTitle, getSong, hasRealChords } from "../../api/songs";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/Dialog";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { SkeletonLines } from "../../components/Skeleton";
-import { IconChevronLeft, IconEdit, IconMusic, IconTrash } from "../../components/icons";
+import { IconChevronLeft, IconEdit, IconMusic, IconPlus, IconTrash } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
 import { ShareButton } from "../share/ShareButton";
 import { formatTimestamp } from "../../lib/dates";
@@ -32,6 +32,12 @@ export function SongDetail() {
     enabled: Number.isFinite(songId),
   });
 
+  // Versões = outras músicas com o mesmo título (outro artista, tom ou arranjo).
+  const { data: versions = [] } = useQuery({
+    queryKey: ["song-versions", songId, song?.title],
+    queryFn: () => findSongsWithSameTitle(song?.title ?? "", songId),
+    enabled: Boolean(song?.title),
+  });
   const [view, setView] = useState<SongView>(user?.prefers_chords ? "chords" : "lyrics");
   const [semitones, setSemitones] = useState(0);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -128,6 +134,13 @@ export function SongDetail() {
                 Editar
               </Button>
             </Link>
+            <Button
+              variant="secondary"
+              icon={<IconPlus width={16} height={16} />}
+              onClick={() => navigate("/songs/new", { state: { versionOf: song } })}
+            >
+              Nova versão
+            </Button>
             {canDelete && (
               <Button
                 variant="secondary"
@@ -160,6 +173,36 @@ export function SongDetail() {
           }}
           onConfirm={() => deleteMutation.mutate()}
         />
+      )}
+
+      {(song.arrangement || versions.length > 0) && (
+        <div className="mb-5 flex flex-col gap-3 rounded-card border border-line bg-surface p-4 text-sm">
+          {song.arrangement && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Arranjo desta versão</p>
+              <p className="mt-1 whitespace-pre-wrap text-ink">{song.arrangement}</p>
+            </div>
+          )}
+          {versions.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Outras versões</p>
+              <ul className="mt-1 flex flex-col gap-1">
+                {versions.map((version) => (
+                  <li key={version.id}>
+                    <Link to={`/songs/${version.id}`} className="font-medium text-north hover:underline">
+                      {version.artist ?? "Sem artista"}
+                    </Link>
+                    <span className="text-muted">
+                      {[version.tone && ` · Tom ${version.tone}`, version.arrangement && ` · ${version.arrangement}`]
+                        .filter(Boolean)
+                        .join("")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-3">

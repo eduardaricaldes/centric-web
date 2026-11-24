@@ -201,7 +201,11 @@ function AddSongPanel({ playlistId, alreadyAddedIds }: { playlistId: number; alr
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-ink">{song.title}</p>
-                  {song.artist && <p className="truncate text-xs text-muted">{song.artist}</p>}
+                  {(song.artist || song.tone) && (
+                    <p className="truncate text-xs text-muted">
+                      {[song.artist, song.tone && `Tom ${song.tone}`].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
                 </div>
                 {added ? (
                   <Badge tone="north">Já no culto</Badge>

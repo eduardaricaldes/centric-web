@@ -12,7 +12,7 @@ import {
   updateSong,
   type SongImportDraft,
 } from "../../api/songs";
-import type { SongListItem } from "../../api/types";
+import type { SongDetail as SongDetailType, SongListItem } from "../../api/types";
 import { Button } from "../../components/Button";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { Input, Textarea } from "../../components/Input";
@@ -33,6 +33,7 @@ const songSchema = z.object({
   duration_min: z.string().regex(/^$|^[1-9]\d*$/, "Use minutos inteiros").optional(),
   chordpro: z.string().min(1, "Escreva a letra (com ou sem cifra entre colchetes)"),
   slides: z.string().optional(),
+  arrangement: z.string().optional(),
 });
 
 type SongFormValues = z.infer<typeof songSchema>;
@@ -103,8 +104,14 @@ export function SongFormPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const location = useLocation();
-  const importState = (location.state ?? null) as { importDraft?: SongImportDraft; importFileName?: string } | null;
+  const importState = (location.state ?? null) as {
+    importDraft?: SongImportDraft;
+    importFileName?: string;
+    versionOf?: SongDetailType;
+  } | null;
   const importDraft = !isEditing ? importState?.importDraft : undefined;
+  // "Nova versão": mesma letra e título, artista/tom/arranjo para trocar.
+  const versionOf = !isEditing ? importState?.versionOf : undefined;
   // Músicas com o mesmo título: aparece o aviso e o próximo "Salvar" cria mesmo assim.
   const [sameTitle, setSameTitle] = useState<SongListItem[] | null>(null);
   const [submitError, setSubmitError] = useState<unknown>(null);
@@ -140,7 +147,17 @@ export function SongFormPage() {
     formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm<SongFormValues>({
     resolver: zodResolver(songSchema),
-    defaultValues: importDraft
+    defaultValues: versionOf
+      ? {
+          title: versionOf.title,
+          artist: "",
+          tone: versionOf.tone ?? "",
+          category: versionOf.category ?? "",
+          duration_min: versionOf.duration_min?.toString() ?? "",
+          chordpro: versionOf.chordpro ?? versionOf.lyrics,
+          arrangement: "",
+        }
+      : importDraft
       ? {
           title: importDraft.title,
           artist: importDraft.artist ?? "",
@@ -159,6 +176,7 @@ export function SongFormPage() {
           duration_min: song.duration_min?.toString() ?? "",
           chordpro: song.chordpro ?? song.lyrics,
           slides: song.slides ?? "",
+          arrangement: song.arrangement ?? "",
         }
       : undefined,
   });
@@ -189,6 +207,7 @@ export function SongFormPage() {
       tone: values.tone || null,
       category: values.category || null,
       duration_min: values.duration_min ? Number(values.duration_min) : null,
+      arrangement: values.arrangement?.trim() ? values.arrangement.trim() : null,
       chordpro: normalizeChordPro(values.chordpro),
       lyrics: toPlainLyrics(normalizeChordPro(values.chordpro)),
       // Só manda os slides quando foram mexidos: sem eles, a API volta ao automático se a letra mudou.
@@ -201,7 +220,7 @@ export function SongFormPage() {
         await queryClient.invalidateQueries({ queryKey: ["songs"] });
         setSavedPath(`/songs/${songId}`);
       } else {
-        if (sameTitle === null) {
+        if (sameTitle === null && !versionOf) {
           const existing = await findSongsWithSameTitle(payload.title);
           if (existing.length > 0) {
             setSameTitle(existing);
@@ -237,7 +256,7 @@ export function SongFormPage() {
 
   return (
     <div className="max-w-5xl">
-      <PageHeader title={isEditing ? "Editar música" : "Nova música"} />
+      <PageHeader title={isEditing ? "Editar música" : versionOf ? `Nova versão de ${versionOf.title}` : "Nova música"} />
 
       {blocker.state === "blocked" && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded-field border border-amber/30 bg-amber/10 px-4 py-3 text-sm text-amber-ink">
@@ -292,6 +311,13 @@ export function SongFormPage() {
           </div>
 
           <Textarea
+            label="Arranjo desta versão"
+            hint="Opcional. Ex.: começa só voz e violão, a banda entra no refrão."
+            rows={2}
+            {...register("arrangement")}
+          />
+
+          <Textarea
             label="Letra / cifra (ChordPro)"
             hint="Cole a cifra como no site (acordes em cima da letra) ou escreva o acorde entre colchetes na sílaba: Gra[C]ça."
             mono
@@ -323,7 +349,7 @@ export function SongFormPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-1">Se for outra versão, clique em Salvar de novo para criar mesmo assim.</p>
+              <p className="mt-1">Se for outra versão (outro artista, tom ou arranjo), clique em Salvar de novo para criar mesmo assim.</p>
             </div>
           )}
 

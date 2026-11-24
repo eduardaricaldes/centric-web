@@ -100,6 +100,8 @@ export interface SongListItem {
   duration_min: number | null;
   /** Slides da projeção ajustados à mão (null = automático). */
   slides?: string | null;
+  /** Arranjo desta versão (dinâmica). Versões = músicas com o mesmo título. */
+  arrangement?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -116,6 +118,8 @@ export interface SongDetail {
   duration_min: number | null;
   /** Slides da projeção ajustados à mão (null = automático). */
   slides?: string | null;
+  /** Arranjo desta versão (dinâmica). Versões = músicas com o mesmo título. */
+  arrangement?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -136,6 +140,7 @@ export interface SongCreatePayload {
   category?: string | null;
   duration_min?: number | null;
   slides?: string | null;
+  arrangement?: string | null;
 }
 
 export interface SongUpdatePayload {
@@ -147,6 +152,7 @@ export interface SongUpdatePayload {
   category?: string | null;
   duration_min?: number | null;
   slides?: string | null;
+  arrangement?: string | null;
 }
 
 // ---------------------------------------------------------------------------
