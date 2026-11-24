@@ -19,6 +19,7 @@ import { Input, Textarea } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
 import { Select } from "../../components/Select";
 import { SkeletonLines } from "../../components/Skeleton";
+import { SlidesEditor } from "./SlidesEditor";
 import { useAuth } from "../auth/AuthContext";
 import { normalizeChordPro, parseChordProLines, toLyricLines, toPlainLyrics } from "../../lib/chordpro";
 import { getErrorMessage, isForbidden, isNotFound } from "../../lib/errors";
@@ -31,6 +32,7 @@ const songSchema = z.object({
   category: z.string().optional(),
   duration_min: z.string().regex(/^$|^[1-9]\d*$/, "Use minutos inteiros").optional(),
   chordpro: z.string().min(1, "Escreva a letra (com ou sem cifra entre colchetes)"),
+  slides: z.string().optional(),
 });
 
 type SongFormValues = z.infer<typeof songSchema>;
@@ -135,7 +137,7 @@ export function SongFormPage() {
     handleSubmit,
     control,
     setValue,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm<SongFormValues>({
     resolver: zodResolver(songSchema),
     defaultValues: importDraft
@@ -156,11 +158,14 @@ export function SongFormPage() {
           category: song.category ?? "",
           duration_min: song.duration_min?.toString() ?? "",
           chordpro: song.chordpro ?? song.lyrics,
+          slides: song.slides ?? "",
         }
       : undefined,
   });
 
   const chordproValue = useWatch({ control, name: "chordpro" }) ?? "";
+  const slidesValue = useWatch({ control, name: "slides" }) ?? "";
+  const [panel, setPanel] = useState<"preview" | "slides">("preview");
 
   const blocker = useBlocker(isDirty && !saved);
 
@@ -186,6 +191,8 @@ export function SongFormPage() {
       duration_min: values.duration_min ? Number(values.duration_min) : null,
       chordpro: normalizeChordPro(values.chordpro),
       lyrics: toPlainLyrics(normalizeChordPro(values.chordpro)),
+      // Só manda os slides quando foram mexidos: sem eles, a API volta ao automático se a letra mudou.
+      ...(dirtyFields.slides ? { slides: values.slides?.trim() ? values.slides : null } : {}),
     };
     try {
       if (isEditing) {
@@ -337,8 +344,37 @@ export function SongFormPage() {
         </div>
 
         <div className="xl:sticky xl:top-6 xl:self-start">
-          <p className="mb-2 text-sm font-medium text-muted">Pré-visualização (modo palco)</p>
-          <StagePreview chordpro={chordproValue} />
+          <div className="mb-2 flex gap-1" role="tablist">
+            {(
+              [
+                ["preview", "Pré-visualização"],
+                ["slides", "Slides do telão"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={panel === key}
+                onClick={() => setPanel(key)}
+                className={`h-8 rounded-field px-3 text-sm font-medium ${
+                  panel === key ? "bg-north text-white" : "text-muted hover:text-ink"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {panel === "preview" ? (
+            <StagePreview chordpro={chordproValue} />
+          ) : (
+            <SlidesEditor
+              chordpro={chordproValue}
+              slidesText={slidesValue}
+              lyricsChanged={Boolean(dirtyFields.chordpro) && !dirtyFields.slides}
+              onChange={(text) => setValue("slides", text, { shouldDirty: true })}
+            />
+          )}
         </div>
       </form>
     </div>

@@ -98,6 +98,8 @@ export interface SongListItem {
   tone: string | null;
   category: string | null;
   duration_min: number | null;
+  /** Slides da projeção ajustados à mão (null = automático). */
+  slides?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -112,6 +114,8 @@ export interface SongDetail {
   tone: string | null;
   category: string | null;
   duration_min: number | null;
+  /** Slides da projeção ajustados à mão (null = automático). */
+  slides?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -131,6 +135,7 @@ export interface SongCreatePayload {
   tone?: string | null;
   category?: string | null;
   duration_min?: number | null;
+  slides?: string | null;
 }
 
 export interface SongUpdatePayload {
@@ -141,6 +146,7 @@ export interface SongUpdatePayload {
   tone?: string | null;
   category?: string | null;
   duration_min?: number | null;
+  slides?: string | null;
 }
 
 // ---------------------------------------------------------------------------
