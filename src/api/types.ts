@@ -98,6 +98,10 @@ export interface SongListItem {
   tone: string | null;
   category: string | null;
   duration_min: number | null;
+  /** Slides da projeção ajustados à mão (null = automático). */
+  slides?: string | null;
+  /** Arranjo desta versão (dinâmica). Versões = músicas com o mesmo título. */
+  arrangement?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -112,6 +116,10 @@ export interface SongDetail {
   tone: string | null;
   category: string | null;
   duration_min: number | null;
+  /** Slides da projeção ajustados à mão (null = automático). */
+  slides?: string | null;
+  /** Arranjo desta versão (dinâmica). Versões = músicas com o mesmo título. */
+  arrangement?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -131,6 +139,8 @@ export interface SongCreatePayload {
   tone?: string | null;
   category?: string | null;
   duration_min?: number | null;
+  slides?: string | null;
+  arrangement?: string | null;
 }
 
 export interface SongUpdatePayload {
@@ -141,6 +151,8 @@ export interface SongUpdatePayload {
   tone?: string | null;
   category?: string | null;
   duration_min?: number | null;
+  slides?: string | null;
+  arrangement?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -498,6 +510,8 @@ export interface ShareLink {
   song_id: number | null;
   event_id: number | null;
   created_at: string;
+  /** Só links de evento: último dia em que o link abre (alguns dias depois do culto). */
+  expires_on?: string | null;
 }
 
 export interface ShareLinkListResponse {

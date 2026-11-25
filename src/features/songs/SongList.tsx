@@ -1,7 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { listItemHasChords, listSongCategories, listSongs } from "../../api/songs";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  IMPORT_ACCEPT,
+  IMPORT_MAX_BYTES,
+  importSongFile,
+  listItemHasChords,
+  listSongCategories,
+  listSongs,
+} from "../../api/songs";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
@@ -10,10 +17,10 @@ import { Input } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
 import { Select } from "../../components/Select";
 import { SkeletonTable } from "../../components/Skeleton";
-import { IconChevronLeft, IconChevronRight, IconEdit, IconMusic, IconPlus } from "../../components/icons";
+import { IconChevronLeft, IconChevronRight, IconEdit, IconMusic, IconPlus, IconUpload } from "../../components/icons";
 import { useAuth } from "../auth/AuthContext";
 import { formatTimestamp } from "../../lib/dates";
-import { isForbidden } from "../../lib/errors";
+import { getErrorMessage, isForbidden } from "../../lib/errors";
 import { canManageSongs } from "../../lib/permissions";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 
@@ -24,6 +31,29 @@ export function SongList() {
   const { user } = useAuth();
   const canManage = canManageSongs(user);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+
+  const handleImport = async (file: File | undefined) => {
+    if (!file) return;
+    setImportError(null);
+    if (file.size > IMPORT_MAX_BYTES) {
+      setImportError("Arquivo maior que 10 MB.");
+      return;
+    }
+    setImporting(true);
+    try {
+      const draft = await importSongFile(file);
+      navigate("/songs/new", { state: { importDraft: draft, importFileName: file.name } });
+    } catch (err) {
+      setImportError(getErrorMessage(err));
+    } finally {
+      setImporting(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
 
   const search = searchParams.get("search") ?? "";
   const artist = searchParams.get("artist") ?? "";
@@ -94,12 +124,36 @@ export function SongList() {
         description="Catálogo com letra e cifra da comunidade."
         actions={
           canManage ? (
-            <Link to="/songs/new">
-              <Button icon={<IconPlus width={18} height={18} />}>Nova música</Button>
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <input
+                ref={fileInput}
+                type="file"
+                accept={IMPORT_ACCEPT}
+                className="hidden"
+                aria-label="Arquivo da letra"
+                onChange={(event) => handleImport(event.target.files?.[0])}
+              />
+              <Button
+                variant="secondary"
+                loading={importing}
+                icon={<IconUpload width={18} height={18} />}
+                onClick={() => fileInput.current?.click()}
+              >
+                {importing ? "Lendo arquivo…" : "Importar de arquivo"}
+              </Button>
+              <Link to="/songs/new">
+                <Button icon={<IconPlus width={18} height={18} />}>Nova música</Button>
+              </Link>
+            </div>
           ) : undefined
         }
       />
+
+      {importError && (
+        <div className="mb-4 rounded-field border border-red/20 bg-red-tint px-3 py-2.5 text-sm text-red">
+          {importError}
+        </div>
+      )}
 
       <div className="mb-5 flex flex-wrap gap-3">
         <Input

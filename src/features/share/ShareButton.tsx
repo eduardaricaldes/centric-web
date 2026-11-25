@@ -5,6 +5,8 @@ import type { ShareLink, ShareTarget } from "../../api/types";
 import { Button } from "../../components/Button";
 import { CopyableLink } from "../../components/CopyableLink";
 import { Dialog } from "../../components/Dialog";
+import { QrCode } from "../../components/QrCode";
+import { formatDate } from "../../lib/dates";
 import { IconLink } from "../../components/icons";
 import { copyWhenReady } from "../../lib/clipboard";
 import { getErrorMessage } from "../../lib/errors";
@@ -88,6 +90,19 @@ export function ShareButton({ target, subject }: ShareButtonProps) {
                 letra e cifra.
               </p>
               <CopyableLink url={shareUrl(link.token)} />
+              <div className="flex flex-wrap items-center gap-4">
+                <QrCode value={shareUrl(link.token)} size={140} />
+                <p className="max-w-[16rem] text-sm text-muted">
+                  Mostre o QR code no telão para a igreja abrir a letra no celular.
+                  {link.expires_on && (
+                    <>
+                      {" "}
+                      O link vale até <strong className="text-ink">{formatDate(link.expires_on)}</strong> e
+                      não aparece no Google.
+                    </>
+                  )}
+                </p>
+              </div>
 
               {confirmingRevoke ? (
                 <div className="rounded-field border border-red/30 bg-red-tint p-3">

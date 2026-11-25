@@ -11,6 +11,8 @@ import { EventFormPage } from "../features/events/EventForm";
 import { EventList } from "../features/events/EventList";
 import { Home } from "../features/home/Home";
 import { Profile } from "../features/profile/Profile";
+import { OperatorPage } from "../features/projection/OperatorPage";
+import { TelaoPage } from "../features/projection/TelaoPage";
 import { ProgramPage } from "../features/program/ProgramPage";
 import { PublicSharePage } from "../features/share/PublicSharePage";
 import { SongDetailRoute } from "../features/songs/SongDetail";
@@ -29,6 +31,8 @@ export const router = createBrowserRouter([
       { path: "/reset-password", element: <ResetPassword /> },
       // Link público de letra: fora do login, para quem não tem conta.
       { path: "/s/:token", element: <PublicSharePage /> },
+      // Telão: não busca nada na internet, só ouve o operador no mesmo navegador.
+      { path: "/telao", element: <TelaoPage /> },
       {
         element: <RequireAuth />,
         children: [
@@ -60,6 +64,7 @@ export const router = createBrowserRouter([
           },
           // Modo palco ocupa a janela inteira: fora do layout com menu lateral.
           { path: "/events/:id/stage", element: <StageRoute /> },
+          { path: "/projecao/:id", element: <OperatorPage /> },
         ],
       },
     ],

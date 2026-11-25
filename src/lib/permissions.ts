@@ -1,11 +1,15 @@
 import type { Assignment, Event, User } from "../api/types";
 
 /**
- * Catálogo de músicas: só ADMIN cria, edita ou apaga (a API usa `require_admin`
- * nessas rotas — LEADER recebe 403 de verdade, mesmo que o BRIEFING antigo dissesse
- * "admin/líder"). LEADER e MEMBER só consultam.
+ * Catálogo de músicas: ADMIN e LEADER criam, importam e editam (decisão de 19/11,
+ * API `require_song_editor`). MEMBER só consulta.
  */
 export function canManageSongs(user: User | null): boolean {
+  return user?.role === "ADMIN" || user?.role === "LEADER";
+}
+
+/** Excluir música e gerar link público de música avulsa continuam só ADMIN. */
+export function canDeleteSongs(user: User | null): boolean {
   return user?.role === "ADMIN";
 }
 

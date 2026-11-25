@@ -69,6 +69,7 @@ const KNOWN_DETAILS: Record<string, string> = {
     "Você só pode compartilhar eventos dos ministérios que lidera.",
   "Share link not found": "Este link já foi revogado.",
   "Link not found": "Este link não está mais disponível.",
+  "Link expired": "Este link expirou. Peça um link novo para quem organizou o culto.",
 
   // Exclusões
   "Song is in a playlist":
@@ -89,7 +90,10 @@ const STATUS_FALLBACK: Record<number, string> = {
 
 function findKnownDetail(detail: unknown): string | null {
   if (typeof detail === "string") {
-    return KNOWN_DETAILS[detail] ?? null;
+    if (KNOWN_DETAILS[detail]) return KNOWN_DETAILS[detail];
+    // Mensagens novas da API já vêm em português (com acento ou ponto final).
+    if (/[\u00C0-\u017F]/.test(detail) || detail.trim().endsWith(".")) return detail;
+    return null;
   }
   if (Array.isArray(detail)) {
     return "Revise os campos preenchidos e tente de novo.";

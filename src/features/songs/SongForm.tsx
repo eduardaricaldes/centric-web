@@ -2,15 +2,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { useBlocker, useNavigate, useParams } from "react-router-dom";
+import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
-import { createSong, getSong, listSongCategories, updateSong } from "../../api/songs";
+import {
+  createSong,
+  findSongsWithSameTitle,
+  getSong,
+  listSongCategories,
+  updateSong,
+  type SongImportDraft,
+} from "../../api/songs";
+import type { SongDetail as SongDetailType, SongListItem } from "../../api/types";
 import { Button } from "../../components/Button";
 import { ErrorState, ForbiddenState } from "../../components/ErrorState";
 import { Input, Textarea } from "../../components/Input";
 import { PageHeader } from "../../components/PageHeader";
 import { Select } from "../../components/Select";
 import { SkeletonLines } from "../../components/Skeleton";
+import { SlidesEditor } from "./SlidesEditor";
 import { useAuth } from "../auth/AuthContext";
 import { normalizeChordPro, parseChordProLines, toLyricLines, toPlainLyrics } from "../../lib/chordpro";
 import { getErrorMessage, isForbidden, isNotFound } from "../../lib/errors";
@@ -23,6 +32,8 @@ const songSchema = z.object({
   category: z.string().optional(),
   duration_min: z.string().regex(/^$|^[1-9]\d*$/, "Use minutos inteiros").optional(),
   chordpro: z.string().min(1, "Escreva a letra (com ou sem cifra entre colchetes)"),
+  slides: z.string().optional(),
+  arrangement: z.string().optional(),
 });
 
 type SongFormValues = z.infer<typeof songSchema>;
@@ -92,6 +103,17 @@ export function SongFormPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const location = useLocation();
+  const importState = (location.state ?? null) as {
+    importDraft?: SongImportDraft;
+    importFileName?: string;
+    versionOf?: SongDetailType;
+  } | null;
+  const importDraft = !isEditing ? importState?.importDraft : undefined;
+  // "Nova versão": mesma letra e título, artista/tom/arranjo para trocar.
+  const versionOf = !isEditing ? importState?.versionOf : undefined;
+  // Músicas com o mesmo título: aparece o aviso e o próximo "Salvar" cria mesmo assim.
+  const [sameTitle, setSameTitle] = useState<SongListItem[] | null>(null);
   const [submitError, setSubmitError] = useState<unknown>(null);
   // Destino depois de salvar: o bloqueio de saída precisa desligar antes de navegar.
   const [savedPath, setSavedPath] = useState<string | null>(null);
@@ -122,9 +144,29 @@ export function SongFormPage() {
     handleSubmit,
     control,
     setValue,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm<SongFormValues>({
     resolver: zodResolver(songSchema),
+    defaultValues: versionOf
+      ? {
+          title: versionOf.title,
+          artist: "",
+          tone: versionOf.tone ?? "",
+          category: versionOf.category ?? "",
+          duration_min: versionOf.duration_min?.toString() ?? "",
+          chordpro: versionOf.chordpro ?? versionOf.lyrics,
+          arrangement: "",
+        }
+      : importDraft
+      ? {
+          title: importDraft.title,
+          artist: importDraft.artist ?? "",
+          tone: importDraft.tone ?? "",
+          category: "",
+          duration_min: "",
+          chordpro: normalizeChordPro(importDraft.chordpro),
+        }
+      : undefined,
     values: song
       ? {
           title: song.title,
@@ -133,11 +175,16 @@ export function SongFormPage() {
           category: song.category ?? "",
           duration_min: song.duration_min?.toString() ?? "",
           chordpro: song.chordpro ?? song.lyrics,
+          slides: song.slides ?? "",
+          arrangement: song.arrangement ?? "",
         }
       : undefined,
   });
 
   const chordproValue = useWatch({ control, name: "chordpro" }) ?? "";
+  const slidesValue = useWatch({ control, name: "slides" }) ?? "";
+  const [panel, setPanel] = useState<"preview" | "slides">("preview");
+
   const blocker = useBlocker(isDirty && !saved);
 
   useEffect(() => {
@@ -160,8 +207,11 @@ export function SongFormPage() {
       tone: values.tone || null,
       category: values.category || null,
       duration_min: values.duration_min ? Number(values.duration_min) : null,
+      arrangement: values.arrangement?.trim() ? values.arrangement.trim() : null,
       chordpro: normalizeChordPro(values.chordpro),
       lyrics: toPlainLyrics(normalizeChordPro(values.chordpro)),
+      // Só manda os slides quando foram mexidos: sem eles, a API volta ao automático se a letra mudou.
+      ...(dirtyFields.slides ? { slides: values.slides?.trim() ? values.slides : null } : {}),
     };
     try {
       if (isEditing) {
@@ -170,6 +220,13 @@ export function SongFormPage() {
         await queryClient.invalidateQueries({ queryKey: ["songs"] });
         setSavedPath(`/songs/${songId}`);
       } else {
+        if (sameTitle === null && !versionOf) {
+          const existing = await findSongsWithSameTitle(payload.title);
+          if (existing.length > 0) {
+            setSameTitle(existing);
+            return;
+          }
+        }
         const created = await createSong(payload);
         await queryClient.invalidateQueries({ queryKey: ["songs"] });
         setSavedPath(`/songs/${created.id}`);
@@ -199,7 +256,7 @@ export function SongFormPage() {
 
   return (
     <div className="max-w-5xl">
-      <PageHeader title={isEditing ? "Editar música" : "Nova música"} />
+      <PageHeader title={isEditing ? "Editar música" : versionOf ? `Nova versão de ${versionOf.title}` : "Nova música"} />
 
       {blocker.state === "blocked" && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded-field border border-amber/30 bg-amber/10 px-4 py-3 text-sm text-amber-ink">
@@ -215,9 +272,20 @@ export function SongFormPage() {
         </div>
       )}
 
+      {importDraft && (
+        <div className="mb-4 rounded-field border border-north/20 bg-north/5 px-4 py-3 text-sm text-ink">
+          Preenchido a partir de <strong>{importState?.importFileName ?? "arquivo"}</strong>
+          {importDraft.used_ai ? " pela leitura automática" : ""}. Confira título, tom e letra antes de salvar.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 xl:grid-cols-2">
         <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6">
-          <Input label="Título" error={errors.title?.message} {...register("title")} />
+          <Input
+            label="Título"
+            error={errors.title?.message}
+            {...register("title", { onChange: () => setSameTitle(null) })}
+          />
           <div className="flex gap-4">
             <Input label="Artista" className="flex-1" {...register("artist")} />
             <Input label="Tom original" className="w-32" placeholder="Ex.: G" {...register("tone")} />
@@ -243,6 +311,13 @@ export function SongFormPage() {
           </div>
 
           <Textarea
+            label="Arranjo desta versão"
+            hint="Opcional. Ex.: começa só voz e violão, a banda entra no refrão."
+            rows={2}
+            {...register("arrangement")}
+          />
+
+          <Textarea
             label="Letra / cifra (ChordPro)"
             hint="Cole a cifra como no site (acordes em cima da letra) ou escreva o acorde entre colchetes na sílaba: Gra[C]ça."
             mono
@@ -261,6 +336,23 @@ export function SongFormPage() {
             }}
           />
 
+          {sameTitle && sameTitle.length > 0 && (
+            <div className="rounded-field border border-amber/30 bg-amber/10 px-3 py-2.5 text-sm text-amber-ink">
+              <p className="font-medium">Essa música já existe no catálogo:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {sameTitle.map((item) => (
+                  <li key={item.id}>
+                    <Link to={`/songs/${item.id}`} className="underline" target="_blank">
+                      {item.title}
+                    </Link>
+                    {item.artist ? ` (${item.artist})` : ""}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1">Se for outra versão (outro artista, tom ou arranjo), clique em Salvar de novo para criar mesmo assim.</p>
+            </div>
+          )}
+
           {submitError !== null && (
             <div className="rounded-field border border-red/20 bg-red-tint px-3 py-2.5 text-sm text-red">
               {getErrorMessage(submitError)}
@@ -278,8 +370,37 @@ export function SongFormPage() {
         </div>
 
         <div className="xl:sticky xl:top-6 xl:self-start">
-          <p className="mb-2 text-sm font-medium text-muted">Pré-visualização (modo palco)</p>
-          <StagePreview chordpro={chordproValue} />
+          <div className="mb-2 flex gap-1" role="tablist">
+            {(
+              [
+                ["preview", "Pré-visualização"],
+                ["slides", "Slides do telão"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={panel === key}
+                onClick={() => setPanel(key)}
+                className={`h-8 rounded-field px-3 text-sm font-medium ${
+                  panel === key ? "bg-north text-white" : "text-muted hover:text-ink"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {panel === "preview" ? (
+            <StagePreview chordpro={chordproValue} />
+          ) : (
+            <SlidesEditor
+              chordpro={chordproValue}
+              slidesText={slidesValue}
+              lyricsChanged={Boolean(dirtyFields.chordpro) && !dirtyFields.slides}
+              onChange={(text) => setValue("slides", text, { shouldDirty: true })}
+            />
+          )}
         </div>
       </form>
     </div>

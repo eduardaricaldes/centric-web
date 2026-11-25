@@ -74,3 +74,39 @@ export function deleteSong(id: number): Promise<void> {
 export function listSongCategories(): Promise<string[]> {
   return apiRequest<string[]>("/songs/categories");
 }
+
+/** Rascunho lido de um arquivo (PDF, Word, TXT ou foto). A API não salva nada. */
+export interface SongImportDraft {
+  title: string;
+  artist: string | null;
+  tone: string | null;
+  chordpro: string;
+  lyrics: string;
+  used_ai: boolean;
+}
+
+export const IMPORT_ACCEPT = ".pdf,.docx,.txt,.png,.jpg,.jpeg,.webp,.heic,image/*,application/pdf,text/plain";
+export const IMPORT_MAX_BYTES = 10 * 1024 * 1024;
+
+export function importSongFile(file: File): Promise<SongImportDraft> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiRequest<SongImportDraft>("/songs/import", { method: "POST", formData });
+}
+
+/** Compara títulos sem acento, caixa ou pontuação ("Ele é a Glória" = "ele e a gloria!"). */
+export function normalizeTitle(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Músicas já cadastradas com o mesmo título, ignorando acento e caixa (aviso antes de criar outra). */
+export async function findSongsWithSameTitle(title: string, ignoreId?: number): Promise<SongListItem[]> {
+  if (!normalizeTitle(title)) return [];
+  const items = await apiRequest<SongListItem[]>("/songs/same-title", { query: { title } });
+  return items.filter((item) => item.id !== ignoreId);
+}

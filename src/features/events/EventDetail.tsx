@@ -201,7 +201,11 @@ function AddSongPanel({ playlistId, alreadyAddedIds }: { playlistId: number; alr
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-ink">{song.title}</p>
-                  {song.artist && <p className="truncate text-xs text-muted">{song.artist}</p>}
+                  {(song.artist || song.tone) && (
+                    <p className="truncate text-xs text-muted">
+                      {[song.artist, song.tone && `Tom ${song.tone}`].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
                 </div>
                 {added ? (
                   <Badge tone="north">Já no culto</Badge>
@@ -530,6 +534,11 @@ export function EventDetail() {
               {isEventCollaborator(user) ? "Programação IA" : "Programação"}
             </Button>
           </Link>
+          {isEventCollaborator(user) && (
+            <Link to={`/projecao/${event.id}`}>
+              <Button variant="secondary">Projetar</Button>
+            </Link>
+          )}
           <Button onClick={() => navigate(`/events/${event.id}/stage`)}>Modo palco</Button>
         </div>
       </div>
